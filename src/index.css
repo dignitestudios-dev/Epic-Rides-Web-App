@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}   
+
+/* Prevent browser autofill from changing input background/text colors (global) */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #ffffff !important; /* Force white text on autofill */
+  caret-color: #ffffff;
+}
+
+/* For dark themed gradient inputs, keep background consistent on autofill */
+input:-webkit-autofill {
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* More specific rule for License Number field in LicenseInformation.jsx */
+input[name="licenseNumber"]:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;      /* Remove white/yellow autofill background */
+  -webkit-text-fill-color: #ffffff !important;   /* Keep text white */
+  caret-color: #ffffff;
+}
+  
