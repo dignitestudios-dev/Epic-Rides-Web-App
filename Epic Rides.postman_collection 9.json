@@ -1,0 +1,1313 @@
+{
+  "info": {
+    "_postman_id": "d9e40166-c7e6-47e1-8d1a-11f1bcadbc6b",
+    "name": "Epic Rides",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52339118",
+    "_collection_link": "https://go.postman.co/collection/48482000-d9e40166-c7e6-47e1-8d1a-11f1bcadbc6b?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"phone\": \"03002642885\",\r\n    \"role\": \"user\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/send-otp",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "send-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.environment.set(\"TOKEN\", pm.response.json().data.token)\r",
+                  "\r",
+                  "if(pm.response.json().data.user.role === 'driver'){\r",
+                  "    pm.environment.set(\"DRIVER\", pm.response.json().data.token)\r",
+                  "    return;\r",
+                  "}\r",
+                  "\r",
+                  "pm.environment.set(\"USER\", pm.response.json().data.token)"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "deviceuniqueId",
+                "value": "hehe",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"phone\": \"03001234560\",\r\n    \"otp\": \"123456\",\r\n    \"role\": \"driver\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/verify-otp",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Onboard",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "5159da1e-c7ec-4ce4-8c68-113981b84f5c",
+                  "description": "Optional",
+                  "src": "postman-cloud:///1f08fcf6-3419-4510-964f-677aa7cd40aa"
+                },
+                {
+                  "key": "name",
+                  "value": "{{$randomNoun}}",
+                  "type": "text",
+                  "uuid": "18123946-5654-4f6f-8df4-1d6a6f4024f1"
+                },
+                {
+                  "key": "email",
+                  "value": "{{$randomEmail}}",
+                  "type": "text",
+                  "uuid": "670dc1a6-f343-48b4-a58b-8a4f904d0482"
+                },
+                {
+                  "key": "phone",
+                  "value": "03002642885",
+                  "type": "text",
+                  "uuid": "dc0e2c02-c793-4801-8046-29b3625bb95f"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/onboard/:role",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "onboard",
+                ":role"
+              ],
+              "variable": [
+                {
+                  "key": "role",
+                  "value": "user",
+                  "description": "user | driver"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Driver documents upload",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "uuid": "ac099b2d-114f-4dc3-84b6-8bc93b93dcb6",
+                  "src": [
+                    "postman-cloud:///1f08fcf6-3419-4510-964f-677aa7cd40aa",
+                    "postman-cloud:///1efd2dc9-ff86-4930-9748-3886ba3574ca"
+                  ]
+                },
+                {
+                  "key": "expiryDate",
+                  "value": "{{$randomDateRecent}}",
+                  "type": "text",
+                  "uuid": "1a75504e-9e71-429f-b32d-40238443d994"
+                },
+                {
+                  "key": "licenseNumber",
+                  "value": "{{$randomAlphaNumeric}}",
+                  "type": "text",
+                  "uuid": "2f614250-6496-4edd-8f65-a49d43395770"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/onboard/driver/:driverId/documents?step=1",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "onboard",
+                "driver",
+                ":driverId",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "step",
+                  "value": "1"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "driverId",
+                  "value": "698eb2ed564c7db568f3377c"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Respond to docs (Test Only)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"documents\": [\r\n        {\r\n            \"id\": \"698eb456851f9fc65b631693\",\r\n            \"status\": \"rejected\"\r\n            //\"rejectReason\": \"Documents are blurry\"\r\n        },\r\n        {\r\n            \"id\": \"698eba1a6a30bd4953f6b6c4\",\r\n            \"status\": \"accepted\"\r\n        },\r\n        {\r\n            \"id\": \"698eb54e851f9fc65b63169f\",\r\n            \"status\": \"approved\"\r\n        },\r\n        {\r\n            \"id\": \"698eb560851f9fc65b6316a4\",\r\n            \"status\": \"approved\"\r\n        }\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/documents/respond",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "documents",
+                "respond"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/logout",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Get plan",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL}}/api/plan",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "plan"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Purchase subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/subscription/purchase/price_1SzWgCCGBVXqhtMary9x0grm",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "purchase",
+                "price_1SzWgCCGBVXqhtMary9x0grm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/subscription/cancel/",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "cancel",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get subscription details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL}}/api/subscription/details/",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "details",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Wallet",
+          "item": [
+            {
+              "name": "Transaction history",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/user/transaction-history",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "transaction-history"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TopUp wallet",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"amount\": 100,\r\n    \"cardId\": \"69944f138badc84ae3718cf6\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/topup-wallet",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "topup-wallet"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Cards",
+          "item": [
+            {
+              "name": "Attach card",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"pmId\": \"pm_1T1mIjCGBVXqhtMazecTMcMg\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/attach-card",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "attach-card"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Set card as default",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/card/69944f138badc84ae3718cf6/set-as-default",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "card",
+                    "69944f138badc84ae3718cf6",
+                    "set-as-default"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Remove card",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/card/699582c828cb6d291fcc2eb6/remove",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "card",
+                    "699582c828cb6d291fcc2eb6",
+                    "remove"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cards list",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/user/cards-list",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "cards-list"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Profile",
+          "item": [
+            {
+              "name": "Get me",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/user/me",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update user profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "name",
+                      "value": "userr",
+                      "type": "text",
+                      "uuid": "61b373f2-82da-4b04-aa57-b8f2f91b3059"
+                    },
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "uuid": "84580f39-1888-4dc0-927f-173094cbbb7d",
+                      "src": "postman-cloud:///1efd2dc9-ff86-4930-9748-3886ba3574ca"
+                    },
+                    {
+                      "key": "email",
+                      "value": "this@yopmail.com",
+                      "type": "text",
+                      "uuid": "8d489d76-fec5-42c3-be44-78d0beddb17e"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/edit/me",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "edit",
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete account",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"otp\": \"123456\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/delete",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "delete"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Locations",
+          "item": [
+            {
+              "name": "Save location",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"name\": \"Main Warehouse\",\r\n  \"address\": \"123 Industrial Street\",\r\n  \"country\": \"USA\",\r\n  \"city\": \"Los Angeles\",\r\n  \"state\": \"California\",\r\n  \"coordinates\": {\r\n    \"lat\": 34.0522,\r\n    \"lng\": -118.2437\r\n  }\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/user/locations/save",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "locations",
+                    "save"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "My locations",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/user/locations",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "user",
+                    "locations"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Notifications",
+          "item": [
+            {
+              "name": "Notification toggle",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/notification/user/toggle",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notification",
+                    "user",
+                    "toggle"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Driver",
+      "item": [
+        {
+          "name": "Bank",
+          "item": [
+            {
+              "name": "Attach bank account",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"token\": \"btok_1T0MSpFmmQtmWKZgyfU9wtHZ\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/driver/attach-bank",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "attach-bank"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete bank account",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"bankId\": \"ba_1T0MSpFmmQtmWKZgWxczuWpX\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/driver/delete-bank",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "delete-bank"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Banks list",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/driver/banks-list",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "banks-list"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Wallet",
+          "item": [
+            {
+              "name": "Transaction history",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/driver/transaction-history",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "transaction-history"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": null,
+                      "description": "debit/credit/all. By default all will be fetched",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Withdraw",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"amount\": 5,\r\n    \"bankId\": \"699486c6487125d08219ed19\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/driver/withdraw",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "withdraw"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Setup connect account",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/driver/setup-account",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "setup-account"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Profile",
+          "item": [
+            {
+              "name": "Edit driver profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "name",
+                      "value": "ports",
+                      "type": "text",
+                      "uuid": "06f6bfe5-94bf-4c09-af8e-47eb46823586",
+                      "disabled": true
+                    },
+                    {
+                      "key": "email",
+                      "value": "wyattbartell26@hotmail.com",
+                      "type": "text",
+                      "uuid": "2d630692-3ca8-4e91-a7a0-8bdf6ab68d8c",
+                      "disabled": true
+                    },
+                    {
+                      "key": "files",
+                      "type": "file",
+                      "uuid": "5d1b68b4-2877-43e7-8b97-cf651cd8a848",
+                      "src": "postman-cloud:///1efd2dc9-ff86-4930-9748-3886ba3574ca"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{URL}}/api/driver/edit/:type",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "edit",
+                    ":type"
+                  ],
+                  "variable": [
+                    {
+                      "key": "type",
+                      "value": "insurance",
+                      "description": "profile/vehicle-registration/driver-license/insurance/vehicle-details"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get me",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{URL}}/api/driver/me",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete account",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"otp\": \"123456\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/driver/delete",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "driver",
+                    "delete"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Notification",
+          "item": [
+            {
+              "name": "Notification toggle",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{TOKEN}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{URL}}/api/notification/driver/toggle",
+                  "host": [
+                    "{{URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notification",
+                    "driver",
+                    "toggle"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
