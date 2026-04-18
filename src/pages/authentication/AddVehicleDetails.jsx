@@ -503,7 +503,7 @@ const AddVehicleDetails = () => {
 
       {/* Main Content */}
       <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8">
-        <div className="w-full max-w-[calc(100%-2rem)] md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 md:py-8 px-4 md:px-0 !pl-[10em] 2xl:!pl-0">
+        <div className="w-full  md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 md:py-8 px-4 md:px-0 md:!pl-[10em] 2xl:!pl-0">
           {/* Header */}
           <div className="flex flex-col justify-center items-center gap-4 md:gap-8 mb-6 md:mb-8">
             {/* Title */}
