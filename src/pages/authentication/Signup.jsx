@@ -21,7 +21,8 @@ const SignupPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    ssn: ''
   });
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState(null);
@@ -38,6 +39,7 @@ const SignupPage = () => {
     name: '',
     email: '',
     phone: '',
+    ssn: '',
     profilePicture: '',
   });
 
@@ -137,6 +139,11 @@ const SignupPage = () => {
       if (rawPhone.length !== 10) {
         error = 'This field is required';
       }
+    } else if (name === 'ssn') {
+      const rawSsn = value.replace(/\D/g, '');
+      if (rawSsn.length !== 9) {
+        error = 'This field is required';
+      }
     }
 
     setFieldErrors((prev) => ({
@@ -183,7 +190,13 @@ const SignupPage = () => {
         ...prev,
         [name]: formatted,
       }));
-      // Validate on change
+      validateField(name, formatted);
+    } else if (name === 'ssn') {
+      const digits = value.replace(/\D/g, '').slice(0, 9);
+      let formatted = digits;
+      if (digits.length > 5) formatted = `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+      else if (digits.length > 3) formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
+      setFormData((prev) => ({ ...prev, ssn: formatted }));
       validateField(name, formatted);
     } else {
       setFormData((prev) => ({
@@ -243,6 +256,7 @@ const SignupPage = () => {
     const isNameValid = validateField('name', formData.name);
     const isEmailValid = validateField('email', formData.email);
     const isPhoneValid = validateField('phone', formData.phone);
+    const isSsnValid = validateField('ssn', formData.ssn);
     const hasProfilePicture = Boolean(profilePicture);
 
     if (!hasProfilePicture) {
@@ -252,7 +266,7 @@ const SignupPage = () => {
       }));
     }
 
-    if (!isNameValid || !isEmailValid || !isPhoneValid || !hasProfilePicture) {
+    if (!isNameValid || !isEmailValid || !isPhoneValid || !isSsnValid || !hasProfilePicture) {
       ErrorToast('Please fill the required fields');
       return;
     }
@@ -265,6 +279,7 @@ const SignupPage = () => {
           file: profilePicture,
           name: formData.name.trim(),
           email: formData.email.trim(),
+          ssn: formData.ssn.replace(/\D/g, ''),
           phone: (() => {
             const cleanPhone = formData.phone.replace(/\D/g, '');
             return cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
@@ -565,6 +580,38 @@ const SignupPage = () => {
                   }}
                 >
                   {fieldErrors.phone}
+                </p>
+              )}
+            </div>
+
+            {/* SSN Field */}
+            <div>
+              <label
+                className="block mb-2 font-semibold text-xs md:text-sm"
+                style={{ fontFamily: 'Poppins', color: '#FFFFFF', textTransform: 'capitalize' }}
+              >
+                SSN Number
+              </label>
+              <input
+                type="text"
+                name="ssn"
+                value={formData.ssn}
+                onChange={handleInputChange}
+                placeholder="XXX-XX-XXXX"
+                maxLength={11}
+                className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                  backdropFilter: 'blur(42px)',
+                  border: fieldErrors.ssn ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                  fontFamily: 'Poppins',
+                  color: formData.ssn ? '#FFFFFF' : '#808080',
+                  transition: 'border-color 0.2s'
+                }}
+              />
+              {fieldErrors.ssn && (
+                <p className="text-xs mt-1.5" style={{ color: '#FF4444', fontFamily: 'Poppins', fontWeight: 500 }}>
+                  {fieldErrors.ssn}
                 </p>
               )}
             </div>

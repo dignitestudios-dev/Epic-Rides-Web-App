@@ -96,7 +96,7 @@ export const verifyOtp = createAsyncThunk(
 // Onboard API
 export const onboard = createAsyncThunk(
   "auth/onboard",
-  async ({ role = "driver", file, name, email, phone, referredBy }, thunkAPI) => {
+  async ({ role = "driver", file, name, email, phone, ssn, referredBy }, thunkAPI) => {
     try {
       // Create FormData for file upload
       const formData = new FormData();
@@ -109,10 +109,14 @@ export const onboard = createAsyncThunk(
       // Append other fields
       formData.append("name", name);
       formData.append("email", email);
-      
+
       // Get clean phone number (digits only)
       const cleanPhone = phone.replace(/\D/g, '');
       formData.append("phone", cleanPhone);
+
+      if (ssn) {
+        formData.append("ssn", ssn);
+      }
 
       // Append referredBy if provided
       if (referredBy) {
