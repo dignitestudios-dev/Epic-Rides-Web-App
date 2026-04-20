@@ -258,7 +258,6 @@ const SignupPage = () => {
     const isPhoneValid = validateField('phone', formData.phone);
     const isSsnValid = validateField('ssn', formData.ssn);
     const hasProfilePicture = Boolean(profilePicture);
-
     if (!hasProfilePicture) {
       setFieldErrors((prev) => ({
         ...prev,
