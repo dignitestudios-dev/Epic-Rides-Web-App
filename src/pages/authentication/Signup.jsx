@@ -308,10 +308,11 @@ const SignupPage = () => {
       <SignupSidebar currentStep={1} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-start justify-center md:justify-end pt-20 md:pt-0 overflow-y-auto">
+             <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
+
         <div className="w-full max-w-[calc(100%-2rem)] md:!w-[75em] flex flex-col items-center justify-center md:pr-[0em] px-4 md:px-0">
           {/* Header */}
-          <div className="text-center mb-8 md:mb-[1em]">
+            <div className="text-center mb-8 md:mb-[1em] mt-[2em] md:mt-0">
             <h1
               className="font-semibold mb-3 md:mb-4 leading-tight text-2xl md:text-[39px] mt-4"
               style={{
@@ -589,7 +590,7 @@ const SignupPage = () => {
                 className="block mb-2 font-semibold text-xs md:text-sm"
                 style={{ fontFamily: 'Poppins', color: '#FFFFFF', textTransform: 'capitalize' }}
               >
-                SSN Number
+                Social Security Number
               </label>
               <input
                 type="text"

@@ -502,8 +502,8 @@ const AddVehicleDetails = () => {
       <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8">
-        <div className="w-full  md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 md:py-8 px-4 md:px-0 md:!pl-[10em] 2xl:!pl-0">
+      <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
+        <div className="w-full md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 sm:pt-[10em] min-[375px]:max-[500px]:pt-0 md:py-8 px-4 md:px-0 md:!pl-[10em] min-[1200px]:!pl-[24em] min-[1200px]:pt-[4em] xl:!pl-[18em] 2xl:!pl-0">
           {/* Header */}
           <div className="flex flex-col justify-center items-center gap-4 md:gap-8 mb-6 md:mb-8">
             {/* Title */}
@@ -830,7 +830,12 @@ const AddVehicleDetails = () => {
                             <div className="absolute top-1.5 right-1.5 w-5 h-5 border border-[#61CB08] rounded-md"></div>
                           )}
                           <div className="flex items-center justify-center mb-2">
-                            <img src={getVehicleTypeIcon(type.value)} alt={type.label} className='w-[3.2em]' />
+            
+                             <img
+                              src={getVehicleTypeIcon(type.model || type.label || type.apiValue || type.value)}
+                              alt={type.label}
+                              className='w-[3.2em]'
+                            />
                           </div>
                           <span className="font-poppins font-bold text-[10px] leading-[120%] text-center text-white">
                             {type.label}

@@ -12,8 +12,8 @@ const SignupSidebar = ({ currentStep = 1 }) => {
   return (
     <>
       {/* Mobile Progress Bar - Top */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-black/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between w-full max-w-full overflow-x-auto">
+      <div className="mobile-signup-sidebar md:hidden fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-black/20 backdrop-blur-sm">
+        <div className="flex items-center justify-between w-full max-w-full overflow-x-auto pb-[1em]">
           {steps.map((step, index) => {
             const isActive = currentStep === step.number;
             const isCompleted = currentStep > step.number;
@@ -64,7 +64,7 @@ const SignupSidebar = ({ currentStep = 1 }) => {
 
       {/* Desktop Sidebar */}
       <div
-        className="absolute left-5 top-1/2 -translate-y-1/2 rounded-2xl md:block hidden"
+        className="desktop-signup-sidebar absolute left-5 top-1/2 -translate-y-1/2 rounded-2xl md:block hidden"
         style={{
           width: '380px',
           height: '720px',
@@ -248,6 +248,23 @@ const SignupSidebar = ({ currentStep = 1 }) => {
           </div>
         </div>
       </div>
+      <style>
+        {`
+          @media (width: 768px) and (height: 1024px),
+            (width: 810px) and (height: 1080px),
+            (width: 1024px) and (height: 768px),
+            (width: 1024px) and (height: 1366px),
+            (width: 1140px) and (height: 712px) {
+            .mobile-signup-sidebar {
+              display: block !important;
+            }
+
+            .desktop-signup-sidebar {
+              display: none !important;
+            }
+          }
+        `}
+      </style>
     </>
   );
 };

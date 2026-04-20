@@ -86,15 +86,15 @@ const VerifiedAccount = () => {
   }, [user]);
 
   React.useEffect(() => {
-  window.history.pushState(null, '', window.location.href);
-  const handlePopState = (event) => {
     window.history.pushState(null, '', window.location.href);
-  };
-  window.addEventListener('popstate', handlePopState);
-  return () => {
-    window.removeEventListener('popstate', handlePopState);
-  };
-}, []);
+    const handlePopState = (event) => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // State to control which view to show: 'submitted', 'approved', 'rejected'
   // Default to 'submitted', but can be overridden by status from location state
@@ -240,16 +240,16 @@ const VerifiedAccount = () => {
 
       return (
         <div
-  key={stableKey}
-  className="w-full  rounded-xl border-2 border-[#61CB08]/25 bg-[rgba(97,203,8,0.08)] px-4 py-3 text-left backdrop-blur-sm"
->
-  <div className="font-poppins font-semibold text-sm text-[#61CB08] leading-snug">
-    {title}
-  </div>
-  <p className="font-poppins font-normal text-sm text-[#E6E6E6] m-0 mt-2 leading-relaxed overflow-y-auto h-[3em] custom-scrollbar">
-  {displayReason}
-</p>
-</div>
+          key={stableKey}
+          className="w-full  rounded-xl border-2 border-[#61CB08]/25 bg-[rgba(97,203,8,0.08)] px-4 py-3 text-left backdrop-blur-sm"
+        >
+          <div className="font-poppins font-semibold text-sm text-[#61CB08] leading-snug">
+            {title}
+          </div>
+          <p className="font-poppins font-normal text-sm text-[#E6E6E6] m-0 mt-2 leading-relaxed overflow-y-auto h-[3em] custom-scrollbar">
+            {displayReason}
+          </p>
+        </div>
       );
     };
 
@@ -316,14 +316,14 @@ const VerifiedAccount = () => {
       setAccountStatus(apiAccountStatus);
       return;
     }
-    
+
     // PRIORITY 0: If statusFromState is 'submitted', always show Request Submitted
     if (statusFromState === 'submitted') {
       console.log('✅ PRIORITY 0: statusFromState is submitted, setting status to submitted');
       setAccountStatus('submitted');
       return;
     }
-    
+
     // PRIORITY 1: If statusFromState is 'rejected', keep it as rejected
     if (statusFromState === 'rejected') {
       console.log('✅ PRIORITY 1: statusFromState is rejected, keeping status as rejected');
@@ -332,13 +332,13 @@ const VerifiedAccount = () => {
     }
 
     // PRIORITY 2: If rejectedDocuments exist (from location state or Redux), set status to 'rejected'
-    const hasRejectedDocs = 
+    const hasRejectedDocs =
       (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||
       (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) ||
       (rejectedDocumentsRedux &&
         Array.isArray(rejectedDocumentsRedux) &&
         rejectedDocumentsRedux.length > 0);
-    
+
     if (hasRejectedDocs) {
       console.log('✅ PRIORITY 2: rejectedDocuments found, setting status to rejected');
       setAccountStatus('rejected');
@@ -399,7 +399,7 @@ const VerifiedAccount = () => {
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
     console.log('=== useEffect: Redirect logic ===');
-    
+
     // IMPORTANT: Do NOT redirect if statusFromState is 'rejected'
     // When user comes from Verification.jsx with rejected status, allow them to see the rejected page
     if (statusFromState === 'rejected') {
@@ -448,7 +448,7 @@ const VerifiedAccount = () => {
 
       {/* Main Content */}
       <div className="absolute inset-0 flex items-center justify-end overflow-y-auto max-h-[50em]">
-        <div className="!w-[75em] flex flex-col items-center justify-center pr-[0em] py-8">
+        <div className="verified-content-wrapper !w-[75em] flex flex-col items-center justify-center pr-[0em] py-8">
           {/* Request Submitted State */}
           {(accountStatus === 'submitted' || accountStatus === 'pending') && (
             <div className="flex flex-col items-center justify-center gap-8">
@@ -464,7 +464,7 @@ const VerifiedAccount = () => {
               </div>
 
               {/* Heading */}
-              <h1 className="font-poppins font-bold text-4xl text-center text-white m-0">
+              <h1 className="font-poppins font-bold text-2xl text-center text-white m-0 md:text-4xl sm:text-2xl">
                 Request Submitted
               </h1>
 
@@ -494,7 +494,7 @@ const VerifiedAccount = () => {
               </div>
 
               {/* Heading */}
-              <h1 className="font-poppins font-bold text-4xl text-center text-white m-0">
+              <h1 className="font-poppins font-bold text-2xl text-center text-white m-0 md:text-4xl sm:text-2xl">
                 Profile Approved
               </h1>
 
@@ -522,14 +522,13 @@ const VerifiedAccount = () => {
               </div>
 
               {/* Heading */}
-              <h1 className="font-poppins font-bold text-4xl text-center text-white m-0">
+              <h1 className="font-poppins font-bold text-2xl text-center text-white m-0 md:text-4xl sm:text-2xl">
                 Profile Rejected
               </h1>
 
               {/* Message */}
               <div className="flex flex-col items-center gap-4 w-full max-w-lg px-3 ">
-                <p className="font-poppins font-normal text-base text-center text-white m-0">
-                  {/* Profile is rejected. For resubmit your profile, please relogin. */}
+                <p className="font-poppins font-normal text-[13px] md:text-base text-center text-white m-0">
                   Your Profile Has Been Rejected. Please Submit Again By Logging In Again.
                 </p>
                 <div className="flex flex-col gap-3 w-full">{getRejectedReasons()}</div>
@@ -557,7 +556,15 @@ const VerifiedAccount = () => {
           )}
         </div>
       </div>
-
+      <style>
+        {`
+          @media (width: 1280px) and (height: 720px) {
+            .verified-content-wrapper {
+              padding-left: 20em;
+            }
+          }
+        `}
+      </style>
       {/* Logout Modal */}
       <LogoutModal
         isOpen={showLogoutModal}

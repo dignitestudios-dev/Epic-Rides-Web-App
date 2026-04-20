@@ -532,7 +532,9 @@ const LicenseInformation = () => {
       <SignupSidebar currentStep={2} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8">
+      {/* <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8"> */}
+              <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
+
         <div className="w-full max-w-[calc(100%-2rem)] md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 md:py-8 px-4 md:px-0">
           {/* Header */}
           {/* Header */}
