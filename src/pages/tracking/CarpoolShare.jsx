@@ -105,7 +105,7 @@ export default function CarpoolShare() {
   const carpoolStatusRef = useRef("open");
 
   const GOOGLE_MAPS_API_KEY =
-    import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyCWPjMVGKPa7uoz-UhF2o8nvpTpJLtOMKY";
+    import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const { carpoolId, passengerId } = useMemo(() => {
     if (typeof window === "undefined") return { carpoolId: "", passengerId: "" };
@@ -679,7 +679,7 @@ export default function CarpoolShare() {
       zoomControlOptions: { position: window.google.maps.ControlPosition.RIGHT_CENTER },
       streetViewControl: false,
       gestureHandling: "greedy",
-      mapId: import.meta.env.VITE_GOOGLE_MAP_ID || "11130661f8b19fe586125b13",
+      mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
     });
 
     mapInstanceRef.current = map;
