@@ -14,6 +14,7 @@ const userDocByKey = (user, key) => {
 export function mergeRejectedDocumentsForResubmit(rejectedFlow, {
   rejectedDocsFromState = [],
   rejectedDocumentsRedux = [],
+  apiRejectedDocuments = [],
   user,
 }) {
   if (!Array.isArray(rejectedFlow) || rejectedFlow.length === 0) return [];
@@ -23,6 +24,8 @@ export function mergeRejectedDocumentsForResubmit(rejectedFlow, {
     if (a) return { ...a };
     const b = (rejectedDocumentsRedux || []).find((d) => d?.key === key);
     if (b) return { ...b };
+    const c = (apiRejectedDocuments || []).find((d) => d?.key === key);
+    if (c) return { ...c };
     return null;
   };
 

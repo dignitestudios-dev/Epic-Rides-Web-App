@@ -19,7 +19,8 @@ const SignupPage = () => {
   const dispatch = useDispatch();
   const { isLoading, phone } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     ssn: ''
@@ -36,7 +37,8 @@ const SignupPage = () => {
   
   // Field-level error states
   const [fieldErrors, setFieldErrors] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     ssn: '',
@@ -115,17 +117,17 @@ const SignupPage = () => {
   };
 
   // Validate individual field
-  const validateField = (name, value) => {
+  const validateField = (fieldName, value) => {
     let error = '';
 
-    if (name === 'name') {
+    if (fieldName === 'firstName' || fieldName === 'lastName') {
       const trimmed = value.trim();
       if (!trimmed) {
         error = 'This field is required';
-      } else if (trimmed.length < 3) {
-        error = 'Name must be at least 3 characters';
+      } else if (trimmed.length < 2) {
+        error = 'Must be at least 2 characters';
       }
-    } else if (name === 'email') {
+    } else if (fieldName === 'email') {
       if (!value.trim()) {
         error = 'This field is required';
       } else {
@@ -134,12 +136,12 @@ const SignupPage = () => {
           error = 'Please enter a valid email address';
         }
       }
-    } else if (name === 'phone') {
+    } else if (fieldName === 'phone') {
       const rawPhone = value.replace(/\D/g, '');
       if (rawPhone.length !== 10) {
         error = 'This field is required';
       }
-    } else if (name === 'ssn') {
+    } else if (fieldName === 'ssn') {
       const rawSsn = value.replace(/\D/g, '');
       if (rawSsn.length !== 9) {
         error = 'This field is required';
@@ -148,60 +150,59 @@ const SignupPage = () => {
 
     setFieldErrors((prev) => ({
       ...prev,
-      [name]: error
+      [fieldName]: error
     }));
 
     return error === '';
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name: fieldName, value } = e.target;
     // Prevent editing phone number if it's from Redux state
-    if (name === 'phone' && phone) {
+    if (fieldName === 'phone' && phone) {
       return; // Don't allow editing if phone is from Redux
     }
 
     // Limit lengths for specific fields
-    if (name === 'name') {
-      const limitedName = value.slice(0, 40); // max 50 characters
+    if (fieldName === 'firstName' || fieldName === 'lastName') {
+      const limited = value.slice(0, 40);
       setFormData((prev) => ({
         ...prev,
-        [name]: limitedName,
+        [fieldName]: limited,
       }));
-      // Validate on change
-      validateField(name, limitedName);
+      validateField(fieldName, limited);
       return;
     }
 
-    if (name === 'email') {
+    if (fieldName === 'email') {
       const limitedEmail = value.slice(0, 100); // max 100 characters
       setFormData((prev) => ({
         ...prev,
-        [name]: limitedEmail,
+        [fieldName]: limitedEmail,
       }));
       // Validate on change
-      validateField(name, limitedEmail);
+      validateField(fieldName, limitedEmail);
       return;
     }
 
-    if (name === 'phone') {
+    if (fieldName === 'phone') {
       const formatted = formatPhoneNumber(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: formatted,
+        phone: formatted,
       }));
-      validateField(name, formatted);
-    } else if (name === 'ssn') {
+      validateField(fieldName, formatted);
+    } else if (fieldName === 'ssn') {
       const digits = value.replace(/\D/g, '').slice(0, 9);
       let formatted = digits;
       if (digits.length > 5) formatted = `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
       else if (digits.length > 3) formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
       setFormData((prev) => ({ ...prev, ssn: formatted }));
-      validateField(name, formatted);
+      validateField(fieldName, formatted);
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [fieldName]: value,
       }));
     }
   };
@@ -253,7 +254,8 @@ const SignupPage = () => {
 
   const handleNext = async () => {
     // Validate all fields first
-    const isNameValid = validateField('name', formData.name);
+    const isFirstNameValid = validateField('firstName', formData.firstName);
+    const isLastNameValid = validateField('lastName', formData.lastName);
     const isEmailValid = validateField('email', formData.email);
     const isPhoneValid = validateField('phone', formData.phone);
     const isSsnValid = validateField('ssn', formData.ssn);
@@ -265,7 +267,7 @@ const SignupPage = () => {
       }));
     }
 
-    if (!isNameValid || !isEmailValid || !isPhoneValid || !isSsnValid || !hasProfilePicture) {
+    if (!isFirstNameValid || !isLastNameValid || !isEmailValid || !isPhoneValid || !isSsnValid || !hasProfilePicture) {
       ErrorToast('Please fill the required fields');
       return;
     }
@@ -276,7 +278,8 @@ const SignupPage = () => {
         onboard({
           role: 'driver',
           file: profilePicture,
-          name: formData.name.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
           email: formData.email.trim(),
           ssn: formData.ssn.replace(/\D/g, ''),
           phone: (() => {
@@ -391,62 +394,111 @@ const SignupPage = () => {
                 )}
               </div>
             </div>
-{/* Name Field */}
-            <div>
-              <label
-                className="block mb-2 font-semibold text-xs md:text-sm"
-                style={{
-                  fontFamily: 'Poppins',
-                  color: '#FFFFFF',
-                  textTransform: 'capitalize'
-                }}
-              >
-                Name
-              </label>
-              <style>{`
-                input[name="name"]:-webkit-autofill,
-                input[name="name"]:-webkit-autofill:hover,
-                input[name="name"]:-webkit-autofill:focus,
-                input[name="name"]:-webkit-autofill:active {
-                  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-                  box-shadow: 0 0 0 1000px transparent inset !important;
-                  -webkit-text-fill-color: #FFFFFF !important;
-                  caret-color: #FFFFFF !important;
-                }
-                
-                input[name="name"]:-webkit-autofill {
-                  transition: background-color 9999s ease-out 0s !important;
-                }
-              `}</style>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                maxLength={50}
-                placeholder="Enter your name"
-                className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                  backdropFilter: 'blur(42px)',
-                  border: fieldErrors.name ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                  fontFamily: 'Poppins',
-                  color: formData.name ? '#FFFFFF' : '#808080',
-                  transition: 'border-color 0.2s, background-color 9999s ease-out 0s'
-                }}
-              />
-              {fieldErrors.name && (
-                <p
-                  className="text-xs mt-1.5"
+            {/* First name & Last name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-4">
+              <div>
+                <label
+                  className="block mb-2 font-semibold text-xs md:text-sm"
                   style={{
-                    color: '#FF4444',
                     fontFamily: 'Poppins',
-                    fontWeight: 500
+                    color: '#FFFFFF',
+                    textTransform: 'capitalize'
                   }}
                 >
-                  {fieldErrors.name}
-                </p>
-              )}
+                  First name
+                </label>
+                <style>{`
+                  input[name="firstName"]:-webkit-autofill,
+                  input[name="firstName"]:-webkit-autofill:hover,
+                  input[name="firstName"]:-webkit-autofill:focus,
+                  input[name="firstName"]:-webkit-autofill:active,
+                  input[name="lastName"]:-webkit-autofill,
+                  input[name="lastName"]:-webkit-autofill:hover,
+                  input[name="lastName"]:-webkit-autofill:focus,
+                  input[name="lastName"]:-webkit-autofill:active {
+                    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+                    box-shadow: 0 0 0 1000px transparent inset !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                    caret-color: #FFFFFF !important;
+                  }
+                  input[name="firstName"]:-webkit-autofill,
+                  input[name="lastName"]:-webkit-autofill {
+                    transition: background-color 9999s ease-out 0s !important;
+                  }
+                `}</style>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  maxLength={40}
+                  placeholder="First name"
+                  autoComplete="given-name"
+                  className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                    backdropFilter: 'blur(42px)',
+                    border: fieldErrors.firstName ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                    fontFamily: 'Poppins',
+                    color: formData.firstName ? '#FFFFFF' : '#808080',
+                    transition: 'border-color 0.2s, background-color 9999s ease-out 0s'
+                  }}
+                />
+                {fieldErrors.firstName && (
+                  <p
+                    className="text-xs mt-1.5"
+                    style={{
+                      color: '#FF4444',
+                      fontFamily: 'Poppins',
+                      fontWeight: 500
+                    }}
+                  >
+                    {fieldErrors.firstName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label
+                  className="block mb-2 font-semibold text-xs md:text-sm"
+                  style={{
+                    fontFamily: 'Poppins',
+                    color: '#FFFFFF',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  Last name
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  maxLength={40}
+                  placeholder="Last name"
+                  autoComplete="family-name"
+                  className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                    backdropFilter: 'blur(42px)',
+                    border: fieldErrors.lastName ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                    fontFamily: 'Poppins',
+                    color: formData.lastName ? '#FFFFFF' : '#808080',
+                    transition: 'border-color 0.2s, background-color 9999s ease-out 0s'
+                  }}
+                />
+                {fieldErrors.lastName && (
+                  <p
+                    className="text-xs mt-1.5"
+                    style={{
+                      color: '#FF4444',
+                      fontFamily: 'Poppins',
+                      fontWeight: 500
+                    }}
+                  >
+                    {fieldErrors.lastName}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Email Field */}

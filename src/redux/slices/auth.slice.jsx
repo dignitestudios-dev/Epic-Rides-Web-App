@@ -96,7 +96,10 @@ export const verifyOtp = createAsyncThunk(
 // Onboard API
 export const onboard = createAsyncThunk(
   "auth/onboard",
-  async ({ role = "driver", file, name, email, phone, ssn, referredBy }, thunkAPI) => {
+  async (
+    { role = "driver", file, firstName, lastName, name, email, phone, ssn, referredBy },
+    thunkAPI
+  ) => {
     try {
       // Create FormData for file upload
       const formData = new FormData();
@@ -107,7 +110,12 @@ export const onboard = createAsyncThunk(
       }
       
       // Append other fields
-      formData.append("name", name);
+      const fn = (firstName ?? "").trim();
+      const ln = (lastName ?? "").trim();
+      const fullName = (name ?? `${fn} ${ln}`.trim()).trim();
+      if (fn) formData.append("firstName", fn);
+      if (ln) formData.append("lastName", ln);
+      if (fullName) formData.append("name", fullName);
       formData.append("email", email);
 
       // Get clean phone number (digits only)
@@ -383,6 +391,26 @@ const authSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    /** Restore user/token from cookies (e.g. after navigation when Redux user is empty). */
+    hydrateAuthFromCookies(state) {
+      const token = Cookies.get("token");
+      if (token) {
+        state.token = token;
+        state.isAuthenticated = true;
+      }
+      const userRaw = Cookies.get("user");
+      if (userRaw) {
+        try {
+          const parsed = JSON.parse(userRaw);
+          if (parsed && typeof parsed === "object") {
+            state.user = parsed;
+            state.isAuthenticated = Boolean(state.token);
+          }
+        } catch {
+          // ignore invalid cookie JSON
+        }
+      }
+    },
     logout(state) {
       Cookies.remove("token");
       Cookies.remove("user");
@@ -535,6 +563,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuthState, setPhone, clearError, logout } = authSlice.actions;
+export const { resetAuthState, setPhone, clearError, logout, hydrateAuthFromCookies } =
+  authSlice.actions;
 
 export default authSlice.reducer;

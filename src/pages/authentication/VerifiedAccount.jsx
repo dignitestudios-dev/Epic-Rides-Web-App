@@ -56,10 +56,6 @@ const VerifiedAccount = () => {
   const vehicleDetails = location.state?.vehicleDetails || {};
   const statusFromState = location.state?.status; // Get status from navigation state
   const rejectedDocsFromState = location.state?.rejectedDocuments; // Get rejectedDocuments from state
-  const shouldShowResubmitButton =
-    statusFromState === 'rejected' &&
-    Array.isArray(rejectedDocsFromState) &&
-    rejectedDocsFromState.length > 0;
 
   console.log('=== VerifiedAccount Component ===');
   console.log('statusFromState:', statusFromState);
@@ -111,6 +107,21 @@ const VerifiedAccount = () => {
   const [apiRejectedDocuments, setApiRejectedDocuments] = useState([]);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const hasRejectedDocsAnywhere = React.useMemo(() => {
+    if (Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) return true;
+    if (Array.isArray(rejectedDocumentsRedux) && rejectedDocumentsRedux.length > 0) return true;
+    if (Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) return true;
+    if (!user) return false;
+    return (
+      user?.driverLicense?.status === 'rejected' ||
+      user?.vehicleRegistration?.status === 'rejected' ||
+      user?.insurance?.status === 'rejected' ||
+      user?.vehicleDetails?.status === 'rejected'
+    );
+  }, [rejectedDocsFromState, rejectedDocumentsRedux, apiRejectedDocuments, user]);
+
+  const shouldShowResubmitButton = accountStatus === 'rejected' && hasRejectedDocsAnywhere;
+
   // Check account status every 10 seconds from API.
   React.useEffect(() => {
     const userId = user?._id;
@@ -121,12 +132,21 @@ const VerifiedAccount = () => {
         const response = await axios.get(`/api/auth/account-status/${userId}`);
         const apiAccountStatus = response?.data?.data?.accountStatus;
         const rejectedDocsFromApi = response?.data?.data?.rejectedDocuments;
-        if (apiAccountStatus) {
-          setApiAccountStatus(apiAccountStatus);
-          setAccountStatus(apiAccountStatus);
-        }
+        const hasRejectedFromApi =
+          Array.isArray(rejectedDocsFromApi) && rejectedDocsFromApi.length > 0;
+
         if (Array.isArray(rejectedDocsFromApi)) {
           setApiRejectedDocuments(rejectedDocsFromApi);
+        }
+
+        if (apiAccountStatus) {
+          setApiAccountStatus(apiAccountStatus);
+        }
+
+        if (hasRejectedFromApi) {
+          setAccountStatus('rejected');
+        } else if (apiAccountStatus) {
+          setAccountStatus(apiAccountStatus);
         }
       } catch (error) {
         console.error('Failed to fetch account status', error);
@@ -141,6 +161,8 @@ const VerifiedAccount = () => {
 
   // Ensure status stays as 'submitted' if all documents are pending
   React.useEffect(() => {
+    if (hasRejectedDocsAnywhere) return;
+
     // IMPORTANT: If all documents are pending, ALWAYS keep status as 'submitted'
     if (allDocumentsPending) {
       // Force status to 'submitted' if it's not already
@@ -150,7 +172,7 @@ const VerifiedAccount = () => {
       }
       return; // Don't change status
     }
-  }, [accountStatus, allDocumentsPending]);
+  }, [accountStatus, allDocumentsPending, hasRejectedDocsAnywhere]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -177,6 +199,9 @@ const VerifiedAccount = () => {
     }
     if (rejectedDocumentsRedux && Array.isArray(rejectedDocumentsRedux)) {
       rejectedDocumentsRedux.forEach((doc) => doc.key && rejectedSet.add(doc.key));
+    }
+    if (apiRejectedDocuments && Array.isArray(apiRejectedDocuments)) {
+      apiRejectedDocuments.forEach((doc) => doc.key && rejectedSet.add(doc.key));
     }
     if (user) {
       if (user?.driverLicense?.status === 'rejected') rejectedSet.add('driverLicense');
@@ -206,6 +231,7 @@ const VerifiedAccount = () => {
     const mergedRejectedDocuments = mergeRejectedDocumentsForResubmit(rejectedFlow, {
       rejectedDocsFromState,
       rejectedDocumentsRedux,
+      apiRejectedDocuments,
       user,
     });
 
@@ -311,7 +337,26 @@ const VerifiedAccount = () => {
   React.useEffect(() => {
     console.log('=== useEffect: Update account status ===');
 
-    // API status is source of truth once available.
+    const hasRejectedDocs =
+      (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||
+      (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) ||
+      (rejectedDocumentsRedux &&
+        Array.isArray(rejectedDocumentsRedux) &&
+        rejectedDocumentsRedux.length > 0) ||
+      (user &&
+        (user?.driverLicense?.status === 'rejected' ||
+          user?.vehicleRegistration?.status === 'rejected' ||
+          user?.insurance?.status === 'rejected' ||
+          user?.vehicleDetails?.status === 'rejected'));
+
+    // Rejected documents override generic API statuses like "incomplete"
+    if (hasRejectedDocs) {
+      console.log('✅ PRIORITY API: rejectedDocuments found, setting status to rejected');
+      setAccountStatus('rejected');
+      return;
+    }
+
+    // API account status (no active rejections from payload)
     if (apiAccountStatus) {
       setAccountStatus(apiAccountStatus);
       return;
@@ -327,20 +372,6 @@ const VerifiedAccount = () => {
     // PRIORITY 1: If statusFromState is 'rejected', keep it as rejected
     if (statusFromState === 'rejected') {
       console.log('✅ PRIORITY 1: statusFromState is rejected, keeping status as rejected');
-      setAccountStatus('rejected');
-      return;
-    }
-
-    // PRIORITY 2: If rejectedDocuments exist (from location state or Redux), set status to 'rejected'
-    const hasRejectedDocs =
-      (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||
-      (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) ||
-      (rejectedDocumentsRedux &&
-        Array.isArray(rejectedDocumentsRedux) &&
-        rejectedDocumentsRedux.length > 0);
-
-    if (hasRejectedDocs) {
-      console.log('✅ PRIORITY 2: rejectedDocuments found, setting status to rejected');
       setAccountStatus('rejected');
       return;
     }
