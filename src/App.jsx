@@ -20,10 +20,12 @@ import RideCancelled from "./pages/tracking/RideCancelled";
 import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route
         path="/"
         element={<Login />}
@@ -106,7 +108,9 @@ function App() {
         path="*"
         element={<NotFound />}
       />
-    </Routes>
+      </Routes>
+      <Analytics />
+    </>
   );
 }
 
