@@ -7,8 +7,17 @@ import axios from '../../axios';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
-import { STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps } from '../../utils/stepValidation';
+import {
+  STEPS,
+  arePreviousStepsCompleted,
+  getFirstIncompleteStep,
+  clearAllSteps,
+  isStepCompleted,
+} from '../../utils/stepValidation';
 import { mergeRejectedDocumentsForResubmit } from '../../utils/rejectedFlowPrefill';
+import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
+import { clearRejectedFlowState } from '../../redux/slices/auth.slice';
 
 const DOCUMENT_KEY_LABELS = {
   driverLicense: 'Driver License',
@@ -108,6 +117,8 @@ const VerifiedAccount = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const hasRejectedDocsAnywhere = React.useMemo(() => {
+    // After successful resubmit, trust "submitted" and ignore stale reject caches
+    if (statusFromState === 'submitted') return false;
     if (Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) return true;
     if (Array.isArray(rejectedDocumentsRedux) && rejectedDocumentsRedux.length > 0) return true;
     if (Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) return true;
@@ -118,9 +129,18 @@ const VerifiedAccount = () => {
       user?.insurance?.status === 'rejected' ||
       user?.vehicleDetails?.status === 'rejected'
     );
-  }, [rejectedDocsFromState, rejectedDocumentsRedux, apiRejectedDocuments, user]);
+  }, [statusFromState, rejectedDocsFromState, rejectedDocumentsRedux, apiRejectedDocuments, user]);
 
   const shouldShowResubmitButton = accountStatus === 'rejected' && hasRejectedDocsAnywhere;
+
+  // After resubmit completes, clear stale rejected docs from Redux so UI shows under review
+  React.useEffect(() => {
+    if (statusFromState !== 'submitted') return;
+    dispatch(clearRejectedFlowState());
+    setApiRejectedDocuments([]);
+    setApiAccountStatus('pending');
+    setAccountStatus('submitted');
+  }, [statusFromState, dispatch]);
 
   // Check account status every 10 seconds from API.
   React.useEffect(() => {
@@ -129,8 +149,10 @@ const VerifiedAccount = () => {
 
     const fetchAccountStatus = async () => {
       try {
-        const response = await axios.get(`/api/auth/account-status/${userId}`);
-        const apiAccountStatus = response?.data?.data?.accountStatus;
+        const response = await axios.get(`/api/auth/account-status/${userId}`, {
+          skipAuthRedirect: true,
+        });
+        const nextApiAccountStatus = response?.data?.data?.accountStatus;
         const rejectedDocsFromApi = response?.data?.data?.rejectedDocuments;
         const hasRejectedFromApi =
           Array.isArray(rejectedDocsFromApi) && rejectedDocsFromApi.length > 0;
@@ -139,14 +161,26 @@ const VerifiedAccount = () => {
           setApiRejectedDocuments(rejectedDocsFromApi);
         }
 
-        if (apiAccountStatus) {
-          setApiAccountStatus(apiAccountStatus);
+        if (nextApiAccountStatus) {
+          setApiAccountStatus(nextApiAccountStatus);
+        }
+
+        // Just-resubmitted: keep "submitted" until API reports a real reject again
+        if (statusFromState === 'submitted' && !hasRejectedFromApi) {
+          setAccountStatus('submitted');
+          return;
         }
 
         if (hasRejectedFromApi) {
           setAccountStatus('rejected');
-        } else if (apiAccountStatus) {
-          setAccountStatus(apiAccountStatus);
+        } else if (
+          nextApiAccountStatus &&
+          nextApiAccountStatus !== 'pending' &&
+          !allDocumentsPending
+        ) {
+          setAccountStatus(nextApiAccountStatus);
+        } else if (!hasRejectedFromApi && (allDocumentsPending || nextApiAccountStatus === 'pending')) {
+          setAccountStatus('submitted');
         }
       } catch (error) {
         console.error('Failed to fetch account status', error);
@@ -157,7 +191,7 @@ const VerifiedAccount = () => {
     const intervalId = setInterval(fetchAccountStatus, 10000);
 
     return () => clearInterval(intervalId);
-  }, [user?._id]);
+  }, [user?._id, statusFromState, allDocumentsPending]);
 
   // Ensure status stays as 'submitted' if all documents are pending
   React.useEffect(() => {
@@ -337,6 +371,13 @@ const VerifiedAccount = () => {
   React.useEffect(() => {
     console.log('=== useEffect: Update account status ===');
 
+    // After resubmit, always show Request Submitted (ignore stale Redux reject cache)
+    if (statusFromState === 'submitted') {
+      console.log('✅ PRIORITY 0: statusFromState is submitted, setting status to submitted');
+      setAccountStatus('submitted');
+      return;
+    }
+
     const hasRejectedDocs =
       (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||
       (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) ||
@@ -356,19 +397,6 @@ const VerifiedAccount = () => {
       return;
     }
 
-    // API account status (no active rejections from payload)
-    if (apiAccountStatus) {
-      setAccountStatus(apiAccountStatus);
-      return;
-    }
-
-    // PRIORITY 0: If statusFromState is 'submitted', always show Request Submitted
-    if (statusFromState === 'submitted') {
-      console.log('✅ PRIORITY 0: statusFromState is submitted, setting status to submitted');
-      setAccountStatus('submitted');
-      return;
-    }
-
     // PRIORITY 1: If statusFromState is 'rejected', keep it as rejected
     if (statusFromState === 'rejected') {
       console.log('✅ PRIORITY 1: statusFromState is rejected, keeping status as rejected');
@@ -376,10 +404,16 @@ const VerifiedAccount = () => {
       return;
     }
 
-    // PRIORITY 3: If all documents are pending, ALWAYS ensure status is 'submitted'
+    // PRIORITY 2: If all documents are pending, show Request Submitted (API may say "pending")
     if (allDocumentsPending) {
-      console.log('✅ PRIORITY 3: All documents pending, setting status to submitted');
+      console.log('✅ PRIORITY 2: All documents pending, setting status to submitted');
       setAccountStatus('submitted');
+      return;
+    }
+
+    // API account status when not in full pending-review state
+    if (apiAccountStatus) {
+      setAccountStatus(apiAccountStatus);
       return;
     }
 
@@ -445,7 +479,23 @@ const VerifiedAccount = () => {
       return;
     }
 
-    // Priority 2: If stepToComplete is null/empty, allow access to verified-account
+    // Must have active subscription before verified-account (e.g. Stripe cancel/back)
+    if (user && !hasActiveSubscription(user)) {
+      clearSubscriptionCheckoutSession();
+      navigate('/subscription', { replace: true });
+      return;
+    }
+
+    const hasRejectedFlow =
+      statusFromState === 'rejected' ||
+      (rejectedDocsFromState && rejectedDocsFromState.length > 0) ||
+      (rejectedDocumentsRedux && rejectedDocumentsRedux.length > 0);
+
+    if (!hasRejectedFlow && !hasActiveSubscription(user)) {
+      navigate('/subscription', { replace: true });
+      return;
+    }
+
     if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
       console.log('✅ PRIORITY 2: stepToComplete is null/empty, ALLOWING ACCESS');
       return;
@@ -475,7 +525,7 @@ const VerifiedAccount = () => {
       <SignupBackground />
 
       {/* Left Sidebar */}
-      <SignupSidebar currentStep={4} />
+      <SignupSidebar currentStep={5} />
 
       {/* Main Content */}
       <div className="absolute inset-0 flex items-center justify-end overflow-y-auto max-h-[50em]">
@@ -531,7 +581,7 @@ const VerifiedAccount = () => {
 
               {/* Message */}
               <p className="font-poppins font-normal text-base text-center text-[#E6E6E6] m-0 px-4 max-w-md">
-                Please relogin to buy a subscription.
+                Your profile is approved. You can log in to the driver app when ready.
               </p>
 
               <button

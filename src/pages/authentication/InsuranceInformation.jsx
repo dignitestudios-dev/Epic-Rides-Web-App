@@ -11,6 +11,7 @@ import LogoutModal from '../../components/global/LogoutModal';
 import { bartwo } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
+import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const InsuranceInformation = () => {
   const navigate = useNavigate();
@@ -320,7 +321,7 @@ const InsuranceInformation = () => {
       <SignupBackground />
 
       {/* Left Sidebar */}
-      <SignupSidebar currentStep={4} />
+      <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
       {/* <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8"> */}
@@ -406,16 +407,19 @@ const InsuranceInformation = () => {
                     >
                       Upto 5MB - JPG, JPEG, PNG, HEIC/HEIF, WEBP
                     </p>
+                    <MobileTakePhotoButton inputId="insurance-front-image-upload" className="mt-1.5" />
                   </div>
                 )}
-                <input
+                <ImageFileInputs
                   id="insurance-front-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/heif,image/heic,image/webp,.jpg,.jpeg,.png,.heif,.heic,.webp"
                   onChange={(e) => handleInsuranceImageChange(e, 'front')}
-                  className="hidden"
                 />
               </label>
+              {insuranceFrontImagePreview && (
+                <div className="md:hidden flex justify-center">
+                  <MobileTakePhotoButton inputId="insurance-front-image-upload" label="Retake Photo" />
+                </div>
+              )}
             </div>
 
             {/* Upload Insurance Document - Back */}
@@ -476,16 +480,19 @@ const InsuranceInformation = () => {
                     >
                       Upto 5MB - JPG, JPEG, PNG, HEIC/HEIF, WEBP
                     </p>
+                    <MobileTakePhotoButton inputId="insurance-back-image-upload" className="mt-1.5" />
                   </div>
                 )}
-                <input
+                <ImageFileInputs
                   id="insurance-back-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/heif,image/heic,image/webp,.jpg,.jpeg,.png,.heif,.heic,.webp"
                   onChange={(e) => handleInsuranceImageChange(e, 'back')}
-                  className="hidden"
                 />
               </label>
+              {insuranceBackImagePreview && (
+                <div className="md:hidden flex justify-center">
+                  <MobileTakePhotoButton inputId="insurance-back-image-upload" label="Retake Photo" />
+                </div>
+              )}
             </div>
 
             {/* Buttons */}

@@ -218,10 +218,10 @@ const AddVehicleDetails = () => {
       }
     });
 
-    // Validate year of manufacture (should not be more than 10 years old)
+    // Validate year of manufacture (should not be more than 15 years old)
     const currentYear = new Date().getFullYear();
     const manufactureYear = parseInt(vehicleDetails.yearOfManufacture);
-    const minYear = currentYear - 8;
+    const minYear = currentYear - 15;
 
     if (vehicleDetails.yearOfManufacture && vehicleDetails.yearOfManufacture.trim()) {
       if (isNaN(manufactureYear) || manufactureYear < minYear || manufactureYear > currentYear) {
@@ -347,9 +347,9 @@ const AddVehicleDetails = () => {
         return;
       }
 
-      // Normal flow: navigate to Verified Account page
+      // Normal flow: add-vehicle-details → subscription → verified-account
       if (result?.message) {
-        navigate('/verified-account', {
+        navigate('/subscription', {
           state: {
             formData,
             licenseData,
@@ -909,7 +909,7 @@ const AddVehicleDetails = () => {
 
             {/* Message */}
             <p className="text-gray-300 text-center text-lg leading-relaxed mb-8">
-              Please note that your vehicle's year of manufacture must be within the last 8 years to meet Epic Rides' safety standards.
+              Please note that your vehicle's year of manufacture must be within the last 15 years to meet Epic Rides' safety standards.
             </p>
 
             {/* Close Button */}

@@ -10,6 +10,7 @@ import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, clearAllSteps, isStepCompleted, getFirstIncompleteStep } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
+import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const LICENSE_NUMBER_REGEX = /^[A-Z0-9]{6,15}$/;
 
@@ -626,16 +627,19 @@ const LicenseInformation = () => {
                     >
                       Upto 5MB - JPG, PNG, AVIF, GIF, BMP, TIFF, WEBP, SVG, HEIF
                     </p>
+                    <MobileTakePhotoButton inputId="front-image-upload" className="mt-1.5" />
                   </div>
                 )}
-                <input
+                <ImageFileInputs
                   id="front-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/heif,image/heic,image/webp,.jpg,.jpeg,.png,.heif,.heic,.webp"
                   onChange={handleFrontImageChange}
-                  className="hidden"
                 />
               </label>
+              {frontImagePreview && (
+                <div className="md:hidden flex justify-center">
+                  <MobileTakePhotoButton inputId="front-image-upload" label="Retake Photo" />
+                </div>
+              )}
               {fieldErrors.frontImage && (
                 <p
                   className="text-xs mt-1"
@@ -713,16 +717,19 @@ const LicenseInformation = () => {
                     >
                       Upto 5MB - JPG, PNG, AVIF, GIF, BMP, TIFF, WEBP, SVG, HEIF
                     </p>
+                    <MobileTakePhotoButton inputId="back-image-upload" className="mt-1.5" />
                   </div>
                 )}
-                <input
+                <ImageFileInputs
                   id="back-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/heif,image/heic,image/webp,.jpg,.jpeg,.png,.heif,.heic,.webp"
                   onChange={handleBackImageChange}
-                  className="hidden"
                 />
               </label>
+              {backImagePreview && (
+                <div className="md:hidden flex justify-center">
+                  <MobileTakePhotoButton inputId="back-image-upload" label="Retake Photo" />
+                </div>
+              )}
               {fieldErrors.backImage && (
                 <p
                   className="text-xs mt-1"

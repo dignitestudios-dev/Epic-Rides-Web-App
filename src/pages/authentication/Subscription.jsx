@@ -7,13 +7,31 @@ import axios from '../../axios';
 import { ErrorToast, SuccessToast } from '../../components/global/Toaster';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
-import { STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps } from '../../utils/stepValidation';
+import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
+import {
+  STEPS,
+  arePreviousStepsCompleted,
+  getFirstIncompleteStep,
+  clearAllSteps,
+  isStepCompleted,
+  markStepCompleted,
+} from '../../utils/stepValidation';
+import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import {
+  clearSubscriptionCheckoutSession,
+  getPostSubscriptionFlowState,
+  getSubscriptionDetailsPath,
+  hasPendingStripeCheckout,
+  resolveDriverId,
+  setSubscriptionCheckoutPending,
+} from '../../utils/subscriptionCheckout';
 
 const Subscription = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete, rejectedDocuments } = useSelector((state) => state.auth);
+  const { user, stepToComplete } = useSelector((state) => state.auth);
+  const authToken = Cookies.get('token');
 
   const formData = location.state?.formData || {};
   const licenseData = location.state?.licenseData || {};
@@ -32,6 +50,56 @@ const Subscription = () => {
 
   console.log(subscriptionDetails,"subscriptionDetails")
 
+  const goToVerifiedAfterSubscription = (extraState = {}) => {
+    markStepCompleted(STEPS.SUBSCRIPTION);
+    clearSubscriptionCheckoutSession();
+    navigate('/verified-account', {
+      replace: true,
+      state: {
+        formData: extraState.formData ?? formData,
+        licenseData: extraState.licenseData ?? licenseData,
+        vehicleData: extraState.vehicleData ?? vehicleData,
+        insuranceData: extraState.insuranceData ?? insuranceData,
+        vehicleDetails: extraState.vehicleDetails ?? vehicleDetails,
+        status: 'submitted',
+        fromSubscription: true,
+      },
+    });
+  };
+
+  // Returning from Stripe without paying — verify API, stay on subscription or go to verified
+  useEffect(() => {
+    if (!hasPendingStripeCheckout()) return;
+
+    const handleStripeReturn = async () => {
+      const driverId = resolveDriverId(user);
+      const detailsPath = getSubscriptionDetailsPath(driverId);
+      if (!detailsPath) {
+        clearSubscriptionCheckoutSession();
+        setPurchasingPlanId(null);
+        return;
+      }
+
+      try {
+        const response = await axios.get(detailsPath, {
+          skipAuthRedirect: true,
+        });
+        const sub = response.data?.data?.subscription;
+        if (sub?.status === 'active') {
+          goToVerifiedAfterSubscription(getPostSubscriptionFlowState() || {});
+          return;
+        }
+      } catch {
+        // not purchased
+      }
+      clearSubscriptionCheckoutSession();
+      setPurchasingPlanId(null);
+    };
+
+    handleStripeReturn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ✅ Back button block karne ka useEffect
   useEffect(() => {
     window.history.pushState(null, '', window.location.pathname);
@@ -47,7 +115,7 @@ const Subscription = () => {
     const fetchPlans = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get('/api/plan');
+        const response = await axios.get('/api/plan', { skipAuthRedirect: true });
         if (response.data?.success && response.data?.data) {
           setPlans(response.data.data);
         } else {
@@ -65,36 +133,39 @@ const Subscription = () => {
   }, []);
 
   useEffect(() => {
-    // Priority 1: If user is null, redirect to signup immediately
-    if (!user) {
+    if (!user && authToken) {
+      dispatch(hydrateAuthFromCookies());
+      return;
+    }
+
+    if (!user && !authToken) {
       navigate('/signup');
       return;
     }
 
-    // Priority 2: If stepToComplete is null/empty, allow access to subscription
-    // This handles the case where all steps are completed and user should see subscription
-    if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
-      // Allow access if stepToComplete is null/empty (all steps completed)
-      // Continue to fetch subscription details below
-    } else {
-      // Priority 3: Check if previous steps (Step 1, 2, 3, 4, 5, 6) are completed
-      if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-        // Redirect to first incomplete step
-        navigate(getFirstIncompleteStep());
+    if (!user) return;
+
+    const fetchSubscriptionDetails = async () => {
+      const driverId = resolveDriverId(user);
+      const detailsPath = getSubscriptionDetailsPath(driverId);
+      if (!detailsPath) {
+        setIsLoadingSubscription(false);
         return;
       }
-    }
 
-    // If the steps are completed or stepToComplete is null/empty, fetch subscription details
-    const fetchSubscriptionDetails = async () => {
       try {
         setIsLoadingSubscription(true);
-        const response = await axios.get('/api/subscription/details');
+        const response = await axios.get(detailsPath, {
+          skipAuthRedirect: true,
+        });
         if (response.data?.success && response.data?.data?.subscription) {
-          setSubscriptionDetails(response.data.data.subscription);
+          const sub = response.data.data.subscription;
+          setSubscriptionDetails(sub);
+          if (sub?.status === 'active') {
+            markStepCompleted(STEPS.SUBSCRIPTION);
+          }
         }
       } catch (error) {
-        // Don't show error if subscription doesn't exist (user might not have subscription yet)
         if (error.response?.status !== 404) {
           console.error('Error fetching subscription details:', error);
         }
@@ -103,8 +174,27 @@ const Subscription = () => {
       }
     };
 
+    // Subscription-first login: stay here to buy until active (do not send to license-information)
+    if (!hasActiveSubscription(user)) {
+      fetchSubscriptionDetails();
+      return;
+    }
+
+    if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
+      const allDocsApproved =
+        user?.driverLicense?.status === 'approved' &&
+        user?.vehicleRegistration?.status === 'approved' &&
+        user?.insurance?.status === 'approved' &&
+        user?.vehicleDetails?.status === 'approved';
+      if (!allDocsApproved) {
+        navigate(getFirstIncompleteStep());
+        return;
+      }
+    }
+
     fetchSubscriptionDetails();
-  }, [user, stepToComplete, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authToken, stepToComplete, navigate, dispatch]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -125,20 +215,41 @@ const Subscription = () => {
       return;
     }
 
+    const driverId = resolveDriverId(user);
+    if (!driverId) {
+      ErrorToast('Driver profile not found. Please complete signup and try again.');
+      return;
+    }
+
     try {
       setPurchasingPlanId(plan.id);
-      const response = await axios.post(`/api/subscription/purchase/${plan.id}`);
+      const response = await axios.post(
+        `/api/subscription/purchase/${plan.id}/${driverId}`,
+        null,
+        { skipAuthRedirect: true }
+      );
 
       if (response.data?.success) {
-        // Check if URL is present in response
         const checkoutUrl = response.data?.data?.url;
 
         if (checkoutUrl) {
-          // Redirect to Stripe checkout URL
+          setSubscriptionCheckoutPending({
+            formData,
+            licenseData,
+            vehicleData,
+            insuranceData,
+            vehicleDetails,
+          });
           window.location.href = checkoutUrl;
         } else {
           SuccessToast(response.data?.message || 'Plan purchased successfully');
-          console.log('Purchase successful:', response.data);
+          goToVerifiedAfterSubscription({
+            formData,
+            licenseData,
+            vehicleData,
+            insuranceData,
+            vehicleDetails,
+          });
         }
       } else {
         ErrorToast(response.data?.message || 'Failed to purchase plan');
@@ -198,7 +309,12 @@ const Subscription = () => {
       if (response.data?.success) {
         SuccessToast(response.data?.message || 'Subscription cancelled successfully');
         // Refresh subscription details
-        const refreshResponse = await axios.get('/api/subscription/details');
+        const refreshDriverId = resolveDriverId(user);
+        const refreshPath = getSubscriptionDetailsPath(refreshDriverId);
+        if (!refreshPath) return;
+        const refreshResponse = await axios.get(refreshPath, {
+          skipAuthRedirect: true,
+        });
         if (refreshResponse.data?.success && refreshResponse.data?.data?.subscription) {
           setSubscriptionDetails(refreshResponse.data.data.subscription);
         }

@@ -11,6 +11,7 @@ import LogoutModal from '../../components/global/LogoutModal';
 import { barone } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
+import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const VehicleDetails = () => {
   const navigate = useNavigate();
@@ -375,16 +376,19 @@ const VehicleDetails = () => {
                     >
                       Upto 5MB - JPG, JPEG, PNG, HEIC/HEIF, WEBP
                     </p>
+                    <MobileTakePhotoButton inputId="vehicle-front-image-upload" className="mt-1.5" />
                   </div>
                 )}
-                <input
+                <ImageFileInputs
                   id="vehicle-front-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/heif,image/heic,image/webp,.jpg,.jpeg,.png,.heif,.heic,.webp"
                   onChange={handleFrontImageChange}
-                  className="hidden"
                 />
               </label>
+              {frontImagePreview && (
+                <div className="md:hidden flex justify-center">
+                  <MobileTakePhotoButton inputId="vehicle-front-image-upload" label="Retake Photo" />
+                </div>
+              )}
               {fieldErrors.frontImage && (
                 <p
                   className="text-xs mt-1"

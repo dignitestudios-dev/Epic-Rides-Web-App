@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 // export const baseUrl = "https://api.dev.epicridesapp.com";
-//export const baseUrl = "https://api.staging.epicridesapp.com";
- export const baseUrl = "https://api.epicridesapp.com";
+  //  export const baseUrl = "https://api.staging.epicridesapp.com";
+  export const baseUrl = "https://api.epicridesapp.com";
 // export const baseUrl = "https://kv6hzw0r-3001.inc1.devtunnels.ms";
 // export const baseUrl = "https://155e-45-199-187-86.ngrok-free.app";
 
@@ -93,10 +93,27 @@ instance.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 401) {
-      Cookies.remove("token");
-      Cookies.remove("user");
-      ErrorToast("Session expired. Please relogin");
-      window.location.href = "/";
+      const onboardingPaths = [
+        "/signup",
+        "/license-information",
+        "/vehicle-details",
+        "/insurance-information",
+        "/add-vehicle-details",
+        "/subscription",
+        "/verified-account",
+        "/verification",
+        "/complete-setup",
+      ];
+      const path = window.location.pathname;
+      const onOnboarding = onboardingPaths.includes(path);
+      const skipRedirect = error.config?.skipAuthRedirect === true;
+
+      if (!onOnboarding && !skipRedirect) {
+        Cookies.remove("token");
+        Cookies.remove("user");
+        ErrorToast("Session expired. Please relogin");
+        window.location.href = "/";
+      }
     }
 
     return Promise.reject(error);

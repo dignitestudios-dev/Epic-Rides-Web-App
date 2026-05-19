@@ -97,7 +97,7 @@ export const verifyOtp = createAsyncThunk(
 export const onboard = createAsyncThunk(
   "auth/onboard",
   async (
-    { role = "driver", file, firstName, lastName, name, email, phone, ssn, referredBy },
+    { role = "driver", file, firstName, lastName, name, email, phone, ssn, address, city, state, referredBy },
     thunkAPI
   ) => {
     try {
@@ -124,6 +124,18 @@ export const onboard = createAsyncThunk(
 
       if (ssn) {
         formData.append("ssn", ssn);
+      }
+
+      if (address) {
+        formData.append("address", address);
+      }
+
+      if (city) {
+        formData.append("city", city);
+      }
+
+      if (state) {
+        formData.append("state", state);
       }
 
       // Append referredBy if provided
@@ -432,6 +444,33 @@ const authSlice = createSlice({
       state.pendingDocuments = [];
       state.isOnboarded = false;
     },
+    /** After rejected docs are resubmitted — clear stale reject state so UI shows under review. */
+    clearRejectedFlowState(state) {
+      state.rejectedDocuments = [];
+      const docKeys = [
+        "driverLicense",
+        "vehicleRegistration",
+        "insurance",
+        "vehicleDetails",
+      ];
+      if (state.user) {
+        docKeys.forEach((key) => {
+          if (state.user[key] && typeof state.user[key] === "object") {
+            state.user[key] = {
+              ...state.user[key],
+              status: "pending",
+              rejectReason: null,
+              rejectionReason: null,
+            };
+          }
+        });
+        try {
+          Cookies.set("user", JSON.stringify(state.user));
+        } catch {
+          // ignore cookie write errors
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -563,7 +602,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuthState, setPhone, clearError, logout, hydrateAuthFromCookies } =
+export const { resetAuthState, setPhone, clearError, logout, hydrateAuthFromCookies, clearRejectedFlowState } =
   authSlice.actions;
 
 export default authSlice.reducer;
