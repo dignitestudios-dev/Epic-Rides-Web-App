@@ -50,10 +50,10 @@ export const arePreviousStepsCompleted = (currentStep) => {
     STEPS.VEHICLE_DETAILS,
     STEPS.INSURANCE_INFORMATION,
     STEPS.ADD_VEHICLE_DETAILS,
+    STEPS.SUBSCRIPTION,
     STEPS.VERIFIED_ACCOUNT,
-    STEPS.SUBSCRIPTION
   ];
-  
+
   const currentIndex = stepOrder.indexOf(currentStep);
   if (currentIndex === -1) return false;
   
@@ -75,19 +75,19 @@ export const getFirstIncompleteStep = () => {
     STEPS.VEHICLE_DETAILS,
     STEPS.INSURANCE_INFORMATION,
     STEPS.ADD_VEHICLE_DETAILS,
+    STEPS.SUBSCRIPTION,
     STEPS.VERIFIED_ACCOUNT,
-    STEPS.SUBSCRIPTION
   ];
-  
+
   const completedSteps = getCompletedSteps();
-  
+
   for (const step of stepOrder) {
     if (!completedSteps.includes(step)) {
       return STEP_ROUTES[step];
     }
   }
-  
-  return STEP_ROUTES[STEPS.SUBSCRIPTION]; // All steps completed
+
+  return STEP_ROUTES[STEPS.VERIFIED_ACCOUNT];
 };
 
 // Clear all completed steps (for logout)

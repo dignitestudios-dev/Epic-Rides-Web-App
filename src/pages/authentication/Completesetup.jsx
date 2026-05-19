@@ -1,14 +1,35 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { loginbackgroundimage, logo } from '../../assets/export';
-
+import { markStepCompleted, STEPS } from '../../utils/stepValidation';
 
 const CompleteSetup = () => {
+  const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
+    const raw = sessionStorage.getItem('postSubscriptionFlow');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        sessionStorage.removeItem('postSubscriptionFlow');
+        markStepCompleted(STEPS.SUBSCRIPTION);
+        sessionStorage.setItem('onboardingJustPurchased', '1');
+        navigate('/verified-account', {
+          replace: true,
+          state: { ...parsed, status: 'submitted', fromSubscription: true },
+        });
+        return;
+      } catch {
+        sessionStorage.removeItem('postSubscriptionFlow');
+        markStepCompleted(STEPS.SUBSCRIPTION);
+        navigate('/verified-account', { replace: true, state: { status: 'submitted' } });
+        return;
+      }
+    }
     setTimeout(() => setVisible(true), 50);
-  }, []);
+  }, [navigate]);
 
   const handleReturnToApp = () => {
     setRedirecting(true);

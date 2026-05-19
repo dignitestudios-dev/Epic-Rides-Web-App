@@ -6,6 +6,7 @@ import { loginbackgroundimage } from '../../assets/export';
 import { SuccessToast } from '../../components/global/Toaster';
 import NumberVerifiedModal from '../../components/global/NumberVerifiedModal';
 import Cookies from 'js-cookie';
+import { resolvePostLoginRoute } from '../../utils/onboardingRedirect';
 import { ChevronLeft } from 'lucide-react';
 import { IoChevronBackCircleSharp } from "react-icons/io5";
 
@@ -123,77 +124,13 @@ export default function Verification() {
           console.log('rejectedDocuments:', rejectedDocuments);
           console.log('userData:', userData);
           
-          // PRIORITY: If rejectedDocuments exist, redirect to verified-account first
-          if (rejectedDocuments && rejectedDocuments.length > 0) {
-            console.log('✅ Redirecting to /verified-account (rejectedDocuments found)');
-            navigate('/verified-account', {
-              state: {
-                status: 'rejected',
-                rejectedDocuments,
-              },
-            });
-            return;
-          }
-          
-          // Check stepToComplete and redirect accordingly
-          if (userData) {
-            // Check if stepToComplete is null, undefined, or empty string
-            if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
-              // Fully onboarded + approved: go to subscription (same as post-verification API shape)
-              if (userData.accountStatus === 'approved') {
-                console.log('✅ Approved, onboarding complete — redirecting to /subscription');
-                navigate('/subscription');
-                return;
-              }
-              console.log('✅ Redirecting to /verified-account (stepToComplete is null/empty)');
-              navigate('/verified-account');
-              return;
-            }
-            
-            if (stepToComplete === "driverLicense") {
-              // Redirect to license information page
-              console.log('✅ Redirecting to /license-information');
-              navigate('/license-information');
-              return;
-            } else if (stepToComplete === "vehicleRegistration") {
-              // Redirect to vehicle details page
-              console.log('✅ Redirecting to /vehicle-details');
-              navigate('/vehicle-details');
-              return;
-            } else if (stepToComplete === "insurance") {
-              // Redirect to insurance information page
-              console.log('✅ Redirecting to /insurance-information');
-              navigate('/insurance-information');
-              return;
-            } else if (stepToComplete === "vehicleDetails") {
-              // Redirect to add vehicle details page
-              console.log('✅ Redirecting to /add-vehicle-details');
-              navigate('/add-vehicle-details');
-              return;
-            }
-          }
-          
-          // If user data is null, redirect to signup
-          if (!userData) {
-            console.log('❌ Redirecting to /signup');
-            navigate('/signup');
-            return;
-          }
-          
-          // Fallback: stepToComplete null/empty (defensive)
-          if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
-            if (userData?.accountStatus === 'approved') {
-              navigate('/subscription');
-              return;
-            }
-            console.log('✅ Redirecting to /verified-account (fallback - stepToComplete is null/empty)');
-            navigate('/verified-account');
-            return;
-          }
-          
-          // If we reach here and no condition matched, show success modal
-          console.log('⚠️ No matching condition, showing success modal');
-          setShowSuccessModal(true);
+          const { path, state } = resolvePostLoginRoute({
+            user: userData,
+            stepToComplete,
+            rejectedDocuments,
+          });
+          console.log('✅ Post-login redirect:', path, state);
+          navigate(path, state ? { state } : undefined);
         }
       } catch (error) {
         // Error is already handled in axios interceptor and slice with ErrorToast

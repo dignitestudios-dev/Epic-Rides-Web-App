@@ -5,8 +5,8 @@ const SignupSidebar = ({ currentStep = 1 }) => {
     { number: 1, name: 'Your Details', key: 'yourDetails' },
     { number: 2, name: 'License Information', key: 'licenseInfo' },
     { number: 3, name: 'Vehicle Details', key: 'vehicleDetails' },
-    { number: 4, name: 'Verified Account', key: 'verifiedAccount' },
-    { number: 5, name: 'Subscription', key: 'subscription' }
+    { number: 4, name: 'Subscription', key: 'subscription' },
+    { number: 5, name: 'Verified Account', key: 'verifiedAccount' },
   ];
 
   return (

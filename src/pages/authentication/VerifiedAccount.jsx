@@ -7,7 +7,13 @@ import axios from '../../axios';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
-import { STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps } from '../../utils/stepValidation';
+import {
+  STEPS,
+  arePreviousStepsCompleted,
+  getFirstIncompleteStep,
+  clearAllSteps,
+  isStepCompleted,
+} from '../../utils/stepValidation';
 import { mergeRejectedDocumentsForResubmit } from '../../utils/rejectedFlowPrefill';
 
 const DOCUMENT_KEY_LABELS = {
@@ -129,7 +135,9 @@ const VerifiedAccount = () => {
 
     const fetchAccountStatus = async () => {
       try {
-        const response = await axios.get(`/api/auth/account-status/${userId}`);
+        const response = await axios.get(`/api/auth/account-status/${userId}`, {
+          skipAuthRedirect: true,
+        });
         const apiAccountStatus = response?.data?.data?.accountStatus;
         const rejectedDocsFromApi = response?.data?.data?.rejectedDocuments;
         const hasRejectedFromApi =
@@ -445,7 +453,16 @@ const VerifiedAccount = () => {
       return;
     }
 
-    // Priority 2: If stepToComplete is null/empty, allow access to verified-account
+    const hasRejectedFlow =
+      statusFromState === 'rejected' ||
+      (rejectedDocsFromState && rejectedDocsFromState.length > 0) ||
+      (rejectedDocumentsRedux && rejectedDocumentsRedux.length > 0);
+
+    if (!hasRejectedFlow && !isStepCompleted(STEPS.SUBSCRIPTION)) {
+      navigate('/subscription', { replace: true });
+      return;
+    }
+
     if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
       console.log('✅ PRIORITY 2: stepToComplete is null/empty, ALLOWING ACCESS');
       return;
@@ -475,7 +492,7 @@ const VerifiedAccount = () => {
       <SignupBackground />
 
       {/* Left Sidebar */}
-      <SignupSidebar currentStep={4} />
+      <SignupSidebar currentStep={5} />
 
       {/* Main Content */}
       <div className="absolute inset-0 flex items-center justify-end overflow-y-auto max-h-[50em]">
@@ -531,7 +548,7 @@ const VerifiedAccount = () => {
 
               {/* Message */}
               <p className="font-poppins font-normal text-base text-center text-[#E6E6E6] m-0 px-4 max-w-md">
-                Please relogin to buy a subscription.
+                Your profile is approved. You can log in to the driver app when ready.
               </p>
 
               <button

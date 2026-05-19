@@ -347,9 +347,9 @@ const AddVehicleDetails = () => {
         return;
       }
 
-      // Normal flow: navigate to Verified Account page
+      // Normal flow: add-vehicle-details → subscription → verified-account
       if (result?.message) {
-        navigate('/verified-account', {
+        navigate('/subscription', {
           state: {
             formData,
             licenseData,
