@@ -146,18 +146,30 @@ const extractCityAndState = (place) => {
   };
 };
 
-const getCityStateValidationError = (value, label) => {
+/** Manual entry keeps the Florida-only rule alive through the State field. */
+const FLORIDA_STATE_VALUE_REGEX = /^(?:fl|florida)$/i;
+
+const getCityStateValidationError = (value, label, isAutofilled = true) => {
   const trimmed = String(value || '').trim();
   if (!trimmed) {
-    return `Select an address to autofill ${label.toLowerCase()}`;
+    return isAutofilled
+      ? `Select an address to autofill ${label.toLowerCase()}`
+      : 'This field is required';
   }
   if (trimmed.length < 2) {
     return `${label} must be at least 2 characters`;
   }
+  if (label === 'State' && !FLORIDA_STATE_VALUE_REGEX.test(trimmed)) {
+    return 'Only Florida (FL) addresses are supported';
+  }
   return '';
 };
 
-const getAddressValidationError = (value) => {
+/**
+ * Autofilled (picked from Google) addresses must read as Florida; manually typed
+ * addresses are validated as free text and the State field carries the FL check.
+ */
+const getAddressValidationError = (value, isAutofilled = true) => {
   const sanitized = sanitizeAddressInput(value);
 
   if (!sanitized) {
@@ -178,7 +190,7 @@ const getAddressValidationError = (value) => {
     }
     return 'Address cannot contain only special characters';
   }
-  if (!isFloridaAddress(sanitized)) {
+  if (isAutofilled && !isFloridaAddress(sanitized)) {
     return 'Please select a Florida address';
   }
 
@@ -209,6 +221,11 @@ const SignupPage = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  // true → address came from the Google list (city/state autofilled + locked)
+  // false → address typed manually (city/state editable and user-entered)
+  const [addressAutofilled, setAddressAutofilled] = useState(false);
+  const [addressHint, setAddressHint] = useState('');
+  const addressAutofilledRef = useRef(false);
   const addressInputRef = useRef(null);
   const addressSuggestionsRef = useRef(null);
   const autocompleteServiceRef = useRef(null);
@@ -305,9 +322,16 @@ const SignupPage = () => {
     window.location.replace('/');
   };
 
+  /** Ref mirrors the state so validation inside stable callbacks never reads a stale mode. */
+  const setAddressMode = useCallback((isAutofilled) => {
+    addressAutofilledRef.current = isAutofilled;
+    setAddressAutofilled(isAutofilled);
+  }, []);
+
   // Validate individual field
   const validateField = (fieldName, value) => {
     let error = '';
+    const isAutofilled = addressAutofilledRef.current;
 
     if (fieldName === 'firstName' || fieldName === 'lastName') {
       if (!value) {
@@ -339,11 +363,11 @@ const SignupPage = () => {
         error = 'This field is required';
       }
     } else if (fieldName === 'address') {
-      error = getAddressValidationError(value);
+      error = getAddressValidationError(value, isAutofilled);
     } else if (fieldName === 'city') {
-      error = getCityStateValidationError(value, 'City');
+      error = getCityStateValidationError(value, 'City', isAutofilled);
     } else if (fieldName === 'state') {
-      error = getCityStateValidationError(value, 'State');
+      error = getCityStateValidationError(value, 'State', isAutofilled);
     }
 
     setFieldErrors((prev) => ({
@@ -402,6 +426,7 @@ const SignupPage = () => {
     if (!autocompleteServiceRef.current || query.length < 2) {
       setAddressSuggestions([]);
       setShowAddressSuggestions(false);
+      setAddressHint('');
       // Clear "No address found" while query is too short
       setFieldErrors((prev) =>
         prev.address === 'No address found' ? { ...prev, address: '' } : prev
@@ -461,15 +486,17 @@ const SignupPage = () => {
       setAddressSuggestions(merged);
       setShowAddressSuggestions(merged.length > 0);
 
-      if (merged.length === 0) {
-        setFieldErrors((prev) => ({ ...prev, address: 'No address found' }));
-      } else {
-        setFieldErrors((prev) =>
-          prev.address === 'No address found' || prev.address === 'Please select a Florida address'
-            ? { ...prev, address: '' }
-            : prev
-        );
-      }
+      // No match is not an error any more — the address can be typed manually
+      setAddressHint(
+        merged.length === 0
+          ? 'No matching address found. You can enter it manually and fill City & State yourself.'
+          : ''
+      );
+      setFieldErrors((prev) =>
+        prev.address === 'No address found' || prev.address === 'Please select a Florida address'
+          ? { ...prev, address: '' }
+          : prev
+      );
     });
   }, []);
 
@@ -478,6 +505,10 @@ const SignupPage = () => {
 
     const applyAddress = (rawAddress, city = '', state = '') => {
       const selectedAddress = sanitizeAddressInput(rawAddress);
+      // Locked only when the place actually resolved both values; otherwise the
+      // user finishes City/State by hand (Places details can fail).
+      setAddressMode(Boolean(city && state));
+      setAddressHint('');
       if (addressInputRef.current) {
         addressInputRef.current.value = selectedAddress;
       }
@@ -544,7 +575,7 @@ const SignupPage = () => {
         setShowAddressSuggestions(false);
       }
     );
-  }, []);
+  }, [setAddressMode]);
 
   const handleInputChange = (e) => {
     const { name: fieldName, value } = e.target;
@@ -691,7 +722,10 @@ const SignupPage = () => {
           ssn: formData.ssn.replace(/\D/g, ''),
           address: sanitizedAddress,
           city: formData.city.trim(),
-          state: formData.state.trim(),
+          // Manually typed "FL"/"fl" is sent as "Florida", matching the autofilled value
+          state: FLORIDA_STATE_VALUE_REGEX.test(formData.state.trim())
+            ? 'Florida'
+            : formData.state.trim(),
           phone: (() => {
             const cleanPhone = formData.phone.replace(/\D/g, '');
             return cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
@@ -1108,12 +1142,14 @@ const SignupPage = () => {
                 }}
                 onInput={(e) => {
                   const value = e.target.value;
-                  // Manual address edit invalidates previous place-based city/state
+                  // Typing switches to manual entry: place-based city/state no longer
+                  // describe this address, so drop them and unlock both fields.
+                  const wasAutofilled = addressAutofilledRef.current;
+                  setAddressMode(false);
                   setFormData((prev) => ({
                     ...prev,
                     address: value,
-                    city: '',
-                    state: '',
+                    ...(wasAutofilled ? { city: '', state: '' } : {}),
                   }));
                   setFieldErrors((prev) => ({
                     ...prev,
@@ -1177,10 +1213,16 @@ const SignupPage = () => {
                   ))}
                 </ul>
               )}
-              {fieldErrors.address && (
+              {fieldErrors.address ? (
                 <p className="text-xs mt-1.5" style={{ color: '#FF4444', fontFamily: 'Poppins', fontWeight: 500 }}>
                   {fieldErrors.address}
                 </p>
+              ) : (
+                addressHint && (
+                  <p className="text-xs mt-1.5" style={{ color: '#A3A3A3', fontFamily: 'Poppins', fontWeight: 400 }}>
+                    {addressHint}
+                  </p>
+                )
               )}
             </div>
 
@@ -1197,9 +1239,11 @@ const SignupPage = () => {
                   type="text"
                   name="city"
                   value={formData.city}
-                  readOnly
-                  disabled
-                  placeholder="City"
+                  onChange={handleInputChange}
+                  onBlur={(e) => validateField('city', e.target.value)}
+                  readOnly={addressAutofilled}
+                  disabled={addressAutofilled}
+                  placeholder={addressAutofilled ? 'City' : 'Enter your city'}
                   maxLength={100}
                   autoComplete="off"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm disabled:cursor-not-allowed"
@@ -1208,8 +1252,8 @@ const SignupPage = () => {
                     backdropFilter: 'blur(42px)',
                     border: fieldErrors.city ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
                     fontFamily: 'Poppins',
-                    color: formData.city ? '#a3a3a3' : '#808080',
-                    opacity: 0.85,
+                    color: addressAutofilled ? (formData.city ? '#a3a3a3' : '#808080') : '#FFFFFF',
+                    opacity: addressAutofilled ? 0.85 : 1,
                     transition: 'border-color 0.2s'
                   }}
                 />
@@ -1230,9 +1274,11 @@ const SignupPage = () => {
                   type="text"
                   name="state"
                   value={formData.state}
-                  readOnly
-                  disabled
-                  placeholder="State"
+                  onChange={handleInputChange}
+                  onBlur={(e) => validateField('state', e.target.value)}
+                  readOnly={addressAutofilled}
+                  disabled={addressAutofilled}
+                  placeholder={addressAutofilled ? 'State' : 'Florida'}
                   maxLength={100}
                   autoComplete="off"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm disabled:cursor-not-allowed"
@@ -1241,8 +1287,8 @@ const SignupPage = () => {
                     backdropFilter: 'blur(42px)',
                     border: fieldErrors.state ? '1px solid #FF4444' : '1px solid rgba(97, 203, 8, 0.32)',
                     fontFamily: 'Poppins',
-                    color: formData.state ? '#a3a3a3' : '#808080',
-                    opacity: 0.85,
+                    color: addressAutofilled ? (formData.state ? '#a3a3a3' : '#808080') : '#FFFFFF',
+                    opacity: addressAutofilled ? 0.85 : 1,
                     transition: 'border-color 0.2s'
                   }}
                 />
