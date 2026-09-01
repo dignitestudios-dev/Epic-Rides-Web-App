@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 // export const baseUrl = "https://api.dev.epicridesapp.com";
-  //  export const baseUrl = "https://api.staging.epicridesapp.com";
-  export const baseUrl = "https://api.epicridesapp.com";
+   export const baseUrl = "https://api.staging.epicridesapp.com";
+  // export const baseUrl = "https://api.epicridesapp.com";
 // export const baseUrl = "https://kv6hzw0r-3001.inc1.devtunnels.ms";
 // export const baseUrl = "https://155e-45-199-187-86.ngrok-free.app";
 
