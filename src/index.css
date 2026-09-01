@@ -9,26 +9,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Prevent browser autofill from changing input background/text colors (global) */
 input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
 textarea:-webkit-autofill,
-select:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-  box-shadow: 0 0 0 1000px transparent inset !important;
-  -webkit-text-fill-color: #ffffff !important; /* Force white text on autofill */
-  caret-color: #ffffff;
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0e180d inset !important;
+  box-shadow: 0 0 0 1000px #0e180d inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s !important;
 }
 
-/* For dark themed gradient inputs, keep background consistent on autofill */
-input:-webkit-autofill {
-  transition: background-color 9999s ease-out 0s;
-}
-
-/* More specific rule for License Number field in LicenseInformation.jsx */
-input[name="licenseNumber"]:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-  box-shadow: 0 0 0 1000px transparent inset !important;
-  background-color: transparent !important;      /* Remove white/yellow autofill background */
-  -webkit-text-fill-color: #ffffff !important;   /* Keep text white */
-  caret-color: #ffffff;
+input:autofill,
+input:autofill:hover,
+input:autofill:focus,
+input:autofill:active,
+textarea:autofill,
+textarea:autofill:hover,
+textarea:autofill:focus,
+textarea:autofill:active,
+select:autofill,
+select:autofill:hover,
+select:autofill:focus,
+select:autofill:active {
+  box-shadow: 0 0 0 1000px #0e180d inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
+  filter: none !important;
 }
   
 

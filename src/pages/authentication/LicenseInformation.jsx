@@ -802,21 +802,6 @@ const LicenseInformation = () => {
               >
                 License Number
               </label>
-              <style>{`
-    input[name="licenseNumber"]:-webkit-autofill,
-    input[name="licenseNumber"]:-webkit-autofill:hover,
-    input[name="licenseNumber"]:-webkit-autofill:focus,
-    input[name="licenseNumber"]:-webkit-autofill:active {
-      -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-      box-shadow: 0 0 0 1000px transparent inset !important;
-      -webkit-text-fill-color: #FFFFFF !important;
-      caret-color: #FFFFFF !important;
-    }
-    
-    input[name="licenseNumber"]:-webkit-autofill {
-      transition: background-color 9999s ease-out 0s !important;
-    }
-  `}</style>
               <input
                 type="text"
                 name="licenseNumber"

@@ -850,25 +850,6 @@ const SignupPage = () => {
                 >
                   First name
                 </label>
-                <style>{`
-                  input[name="firstName"]:-webkit-autofill,
-                  input[name="firstName"]:-webkit-autofill:hover,
-                  input[name="firstName"]:-webkit-autofill:focus,
-                  input[name="firstName"]:-webkit-autofill:active,
-                  input[name="lastName"]:-webkit-autofill,
-                  input[name="lastName"]:-webkit-autofill:hover,
-                  input[name="lastName"]:-webkit-autofill:focus,
-                  input[name="lastName"]:-webkit-autofill:active {
-                    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-                    box-shadow: 0 0 0 1000px transparent inset !important;
-                    -webkit-text-fill-color: #FFFFFF !important;
-                    caret-color: #FFFFFF !important;
-                  }
-                  input[name="firstName"]:-webkit-autofill,
-                  input[name="lastName"]:-webkit-autofill {
-                    transition: background-color 9999s ease-out 0s !important;
-                  }
-                `}</style>
                 <input
                   type="text"
                   name="firstName"
@@ -956,21 +937,6 @@ const SignupPage = () => {
               >
                 Email Address
               </label>
-              <style>{`
-                input[name="email"]:-webkit-autofill,
-                input[name="email"]:-webkit-autofill:hover,
-                input[name="email"]:-webkit-autofill:focus,
-                input[name="email"]:-webkit-autofill:active {
-                  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-                  box-shadow: 0 0 0 1000px transparent inset !important;
-                  -webkit-text-fill-color: #FFFFFF !important;
-                  caret-color: #FFFFFF !important;
-                }
-                
-                input[name="email"]:-webkit-autofill {
-                  transition: background-color 9999s ease-out 0s !important;
-                }
-              `}</style>
               <input
                 type="email"
                 name="email"
