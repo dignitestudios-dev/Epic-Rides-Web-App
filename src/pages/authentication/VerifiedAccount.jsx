@@ -123,7 +123,6 @@ const VerifiedAccount = () => {
 
   const hasRejectedDocsAnywhere = React.useMemo(() => {
     // After successful resubmit, trust "submitted" and ignore stale reject caches
-    if (statusFromState === 'submitted') return false;
     if (Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) return true;
     if (Array.isArray(rejectedDocumentsRedux) && rejectedDocumentsRedux.length > 0) return true;
     if (Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) return true;
@@ -149,12 +148,6 @@ const VerifiedAccount = () => {
   React.useEffect(() => {
     const hasRejectedFromApi = Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0;
 
-    // Just-resubmitted: keep "submitted" until API reports a real reject again
-    if (statusFromState === 'submitted' && !hasRejectedFromApi) {
-      setAccountStatus('submitted');
-      return;
-    }
-
     if (hasRejectedFromApi) {
       setAccountStatus('rejected');
     } else if (
@@ -166,7 +159,7 @@ const VerifiedAccount = () => {
     } else if (!hasRejectedFromApi && (allDocumentsPending || apiAccountStatus === 'pending')) {
       setAccountStatus('submitted');
     }
-  }, [apiAccountStatus, apiRejectedDocuments, statusFromState, allDocumentsPending]);
+  }, [apiAccountStatus, apiRejectedDocuments, allDocumentsPending]);
 
   // Ensure status stays as 'submitted' if all documents are pending
   React.useEffect(() => {
@@ -347,13 +340,6 @@ const VerifiedAccount = () => {
   // Update account status based on user documents status
   React.useEffect(() => {
     console.log('=== useEffect: Update account status ===');
-
-    // After resubmit, always show Request Submitted (ignore stale Redux reject cache)
-    if (statusFromState === 'submitted') {
-      console.log('✅ PRIORITY 0: statusFromState is submitted, setting status to submitted');
-      setAccountStatus('submitted');
-      return;
-    }
 
     const hasRejectedDocs =
       (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||

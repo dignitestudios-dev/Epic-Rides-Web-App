@@ -136,6 +136,23 @@ const Subscription = () => {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    
+    // Re-verify route on every update (e.g. from background polling)
+    const route = resolvePostLoginRoute({
+      user,
+      stepToComplete,
+      isOnboarded,
+      rejectedDocuments,
+      pendingDocuments
+    });
+
+    if (route && route.path && route.path !== '/subscription') {
+      navigate(route.path, { state: route.state, replace: true });
+    }
+  }, [user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments, navigate]);
+
+  useEffect(() => {
     if (!user && authToken) {
       dispatch(hydrateAuthFromCookies());
       return;
@@ -177,24 +194,9 @@ const Subscription = () => {
       }
     };
 
-    // The account must be complete before we ask for money.
-    if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-      const route = resolvePostLoginRoute({
-        user,
-        stepToComplete,
-        isOnboarded,
-        rejectedDocuments,
-        pendingDocuments
-      });
-      if (route && route.path && route.path !== '/subscription') {
-        navigate(route.path, { replace: true, state: route.state });
-        return;
-      }
-    }
-
     fetchSubscriptionDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authToken, stepToComplete, navigate, dispatch]);
+  }, [user?._id, authToken, navigate, dispatch]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);

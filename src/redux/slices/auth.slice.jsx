@@ -641,7 +641,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.success = action.payload.message;
         state.error = null;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
+        state.stepToComplete = action.payload.stepToComplete ?? null;
+        if (state.user) {
+          if (!state.user.driverLicense) state.user.driverLicense = {};
+          state.user.driverLicense.status = 'pending';
+        }
+        if (Array.isArray(state.rejectedDocuments)) {
+          state.rejectedDocuments = state.rejectedDocuments.filter(doc => doc.key !== 'driverLicense');
+        }
       })
       .addCase(uploadDriverDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -656,8 +663,15 @@ const authSlice = createSlice({
       .addCase(uploadVehicleRegistrationDocuments.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
+        state.stepToComplete = action.payload.stepToComplete ?? null;
         state.error = null;
+        if (state.user) {
+          if (!state.user.vehicleRegistration) state.user.vehicleRegistration = {};
+          state.user.vehicleRegistration.status = 'pending';
+        }
+        if (Array.isArray(state.rejectedDocuments)) {
+          state.rejectedDocuments = state.rejectedDocuments.filter(doc => doc.key !== 'vehicleRegistration');
+        }
       })
       .addCase(uploadVehicleRegistrationDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -672,8 +686,15 @@ const authSlice = createSlice({
       .addCase(uploadInsuranceDocuments.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
+        state.stepToComplete = action.payload.stepToComplete ?? null;
         state.error = null;
+        if (state.user) {
+          if (!state.user.insurance) state.user.insurance = {};
+          state.user.insurance.status = 'pending';
+        }
+        if (Array.isArray(state.rejectedDocuments)) {
+          state.rejectedDocuments = state.rejectedDocuments.filter(doc => doc.key !== 'insurance');
+        }
       })
       .addCase(uploadInsuranceDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -688,8 +709,15 @@ const authSlice = createSlice({
       .addCase(uploadVehicleDetails.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
+        state.stepToComplete = action.payload.stepToComplete ?? null;
         state.error = null;
+        if (state.user) {
+          if (!state.user.vehicleDetails) state.user.vehicleDetails = {};
+          state.user.vehicleDetails.status = 'pending';
+        }
+        if (Array.isArray(state.rejectedDocuments)) {
+          state.rejectedDocuments = state.rejectedDocuments.filter(doc => doc.key !== 'vehicleDetails');
+        }
       })
       .addCase(uploadVehicleDetails.rejected, (state, action) => {
         state.isLoading = false;

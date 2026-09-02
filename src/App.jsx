@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate } from "react-router";
+import { Route, Routes, Navigate, useLocation } from "react-router";
 import "./App.css";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DummyHome from "./pages/app/DummyHome";
@@ -23,9 +23,12 @@ import NotFound from "./pages/NotFound";
 import { useAccountStatus } from "./hooks/useAccountStatus";
 
 function App() {
+  const location = useLocation();
+  const disableAccountStatus = location.pathname === '/' || location.pathname === '/verification';
+
   // Start polling account status on a global level.
   // It handles its own condition (only polls when logged in and active).
-  useAccountStatus({ pollMs: 10000 });
+  useAccountStatus({ pollMs: 10000, enabled: !disableAccountStatus });
 
   return (
     <Routes>

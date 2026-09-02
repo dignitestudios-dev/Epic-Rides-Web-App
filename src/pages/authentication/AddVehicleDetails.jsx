@@ -378,10 +378,27 @@ const AddVehicleDetails = () => {
 
   React.useEffect(() => {
     if (hasPrefilledRef.current) return;
-    const doc = rejectedDoc;
-    if (!doc) return;
+    
+    let sourceData = null;
+    
+    // First try to get it from rejected document metadata
+    if (rejectedDoc) {
+       sourceData = rejectedDoc.metadata && typeof rejectedDoc.metadata === 'object' 
+        ? { ...rejectedDoc, ...rejectedDoc.metadata } 
+        : rejectedDoc;
+    } 
+    // Fallback to user.vehicles[0]
+    else if (user && user.vehicles && user.vehicles.length > 0) {
+       const vehicle = user.vehicles[0];
+       if (vehicle.make || vehicle.model) {
+           sourceData = vehicle;
+       }
+    }
+    
+    if (!sourceData) return;
+    
     hasPrefilledRef.current = true;
-    const meta = doc.metadata && typeof doc.metadata === 'object' ? doc.metadata : {};
+
     const formKeys = new Set([
       'make',
       'model',
@@ -393,17 +410,14 @@ const AddVehicleDetails = () => {
       'registrationExpiryDate',
       'vehicleType',
     ]);
-    const fromDoc = { ...meta };
-    Object.keys(doc).forEach((k) => {
-      if (formKeys.has(k) && doc[k] != null && doc[k] !== '') fromDoc[k] = doc[k];
-    });
-    const apiMerged = { ...meta, ...doc };
-    if (fromDoc.vehicleType != null && fromDoc.vehicleType !== '') {
-      pendingVehicleTypeRef.current = String(fromDoc.vehicleType);
+
+    if (sourceData.vehicleType != null && sourceData.vehicleType !== '') {
+      pendingVehicleTypeRef.current = String(sourceData.vehicleType);
     }
+
     setVehicleDetails((prev) => {
       const next = { ...prev };
-      Object.entries(fromDoc).forEach(([k, v]) => {
+      Object.entries(sourceData).forEach(([k, v]) => {
         if (!formKeys.has(k) || v == null || v === '') return;
         // vehicleType is resolved against the loaded option list, not copied verbatim
         if (k === 'vehicleType') return;
@@ -412,17 +426,21 @@ const AddVehicleDetails = () => {
             ? normalizeRegistrationExpiryForInput(v)
             : String(v);
       });
-      const region = apiMerged.regionOfRegistration;
+      
+      // Map regionOfRegistration if stateRegion isn't directly matching but it's present in the model
+      const region = sourceData.stateRegion || sourceData.regionOfRegistration;
       if (region != null && region !== '') {
         next.stateRegion = String(region);
       }
-      const expiry = apiMerged.expiryDate;
+      
+      const expiry = sourceData.registrationExpiryDate || sourceData.expiryDate;
       if (expiry != null && expiry !== '') {
         next.registrationExpiryDate = normalizeRegistrationExpiryForInput(expiry);
       }
+      
       return next;
     });
-  }, [rejectedDoc]);
+  }, [user, rejectedDoc]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
