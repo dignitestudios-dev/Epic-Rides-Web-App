@@ -1,4 +1,4 @@
-import { STEPS, markStepCompleted, getFirstIncompleteStep } from './stepValidation';
+import { STEPS, setCompletedSteps, getFirstIncompleteStep } from './stepValidation';
 
 const DOCUMENT_KEYS = [
   'driverLicense',
@@ -63,17 +63,49 @@ export const shouldRedirectToSubscription = (user, pendingDocuments = []) => {
   return areAllDocumentsPendingReview(user, pendingDocuments);
 };
 
-/** Sync local step progress when API shows onboarding is already done. */
+/** Document key → the wizard step that uploads it, in wizard order. */
+const DOC_KEY_TO_STEP = [
+  ['driverLicense', STEPS.LICENSE_INFORMATION],
+  ['vehicleRegistration', STEPS.VEHICLE_DETAILS],
+  ['insurance', STEPS.INSURANCE_INFORMATION],
+  ['vehicleDetails', STEPS.ADD_VEHICLE_DETAILS],
+];
+
+/** True for the four document steps — used to decide how much state to forward. */
+export const isDocumentRoute = (route) =>
+  Object.values(DOC_KEY_TO_ROUTE).includes(route);
+
+/** Local step progress derived from server truth, one document at a time. */
+export const computeCompletedStepsFromUser = (user) => {
+  if (!user) return [];
+
+  const steps = [STEPS.SIGNUP];
+
+  // A step counts as done only when its document no longer needs the driver.
+  // A rejected document is NOT done, even if later documents already are.
+  DOC_KEY_TO_STEP.forEach(([key, step]) => {
+    if (!documentNeedsUserAction(user[key])) {
+      steps.push(step);
+    }
+  });
+
+  if (hasActiveSubscription(user)) {
+    steps.push(STEPS.SUBSCRIPTION);
+  }
+
+  return steps;
+};
+
+/**
+ * Overwrite local progress with server truth.
+ *
+ * This *replaces* rather than adds. The previous version marked all four document steps
+ * complete for any user, so logging in with a rejected document left every step flagged done
+ * — and the next page bounced straight to /subscription with documents still outstanding.
+ */
 export const syncCompletedStepsFromUser = (user) => {
   if (!user) return;
-  markStepCompleted(STEPS.SIGNUP);
-  markStepCompleted(STEPS.LICENSE_INFORMATION);
-  markStepCompleted(STEPS.VEHICLE_DETAILS);
-  markStepCompleted(STEPS.INSURANCE_INFORMATION);
-  markStepCompleted(STEPS.ADD_VEHICLE_DETAILS);
-  if (hasActiveSubscription(user)) {
-    markStepCompleted(STEPS.SUBSCRIPTION);
-  }
+  setCompletedSteps(computeCompletedStepsFromUser(user));
 };
 
 const getFirstIncompleteDocumentRoute = (user) => {
@@ -129,6 +161,9 @@ export const resolvePostLoginRoute = ({
   if (!user || isOnboarded === false) {
     return { path: '/signup' };
   }
+
+  // Align local progress with server truth on every login, whichever branch is taken below
+  syncCompletedStepsFromUser(user);
 
   // 1. Active subscription + rejected docs → rejected summary
   if (hasRejectedDocuments(user, rejectedDocuments)) {

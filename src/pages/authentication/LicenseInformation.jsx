@@ -10,6 +10,7 @@ import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, clearAllSteps, isStepCompleted, getFirstIncompleteStep } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
+import { isDocumentRoute } from '../../utils/onboardingRedirect';
 import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const LICENSE_NUMBER_REGEX = /^[A-Z0-9]{6,15}$/;
@@ -346,17 +347,13 @@ const LicenseInformation = () => {
       const currentIndex = location.state?.currentIndex ?? 0;
       
       if (fromVerified && Array.isArray(rejectedFlow) && rejectedFlow.length > 0) {
+        // Route by real progress, not by position in the rejected list: the driver may still
+        // owe another rejected document, or one that was never uploaded at all. Only when
+        // nothing is outstanding does this resolve to /subscription or /verified-account.
+        const nextRoute = getFirstIncompleteStep();
         const nextIndex = currentIndex + 1;
-        const routeMap = {
-          driverLicense: '/license-information',
-          vehicleRegistration: '/vehicle-details',
-          insurance: '/insurance-information',
-          vehicleDetails: '/add-vehicle-details',
-        };
-        
-        if (nextIndex < rejectedFlow.length) {
-          const nextKey = rejectedFlow[nextIndex];
-          const nextRoute = routeMap[nextKey] || '/verified-account';
+
+        if (isDocumentRoute(nextRoute)) {
           navigate(nextRoute, {
             state: {
               formData,
@@ -373,9 +370,8 @@ const LicenseInformation = () => {
           });
           return;
         }
-        
-        // No more rejected steps, go back to verified-account
-        navigate('/verified-account', {
+
+        navigate(nextRoute, {
           state: {
             formData,
             licenseData: {

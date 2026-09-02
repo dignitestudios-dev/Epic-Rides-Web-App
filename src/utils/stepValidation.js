@@ -33,7 +33,22 @@ export const markStepCompleted = (step) => {
 // Get all completed steps
 export const getCompletedSteps = () => {
   const stored = localStorage.getItem('completedSteps');
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Replace stored progress outright.
+ * `markStepCompleted` can only add, so it cannot correct progress that was recorded for a
+ * step the server says is still outstanding (e.g. a document that came back rejected).
+ */
+export const setCompletedSteps = (steps) => {
+  localStorage.setItem('completedSteps', JSON.stringify(Array.isArray(steps) ? steps : []));
 };
 
 // Check if a step is completed

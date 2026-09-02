@@ -7,6 +7,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }   
 
+/* Fix for macOS/iOS where misspelled words inside inputs revert to black text */
+input, textarea {
+  -webkit-text-fill-color: currentcolor;
+}
+
 /* Prevent browser autofill from changing input background/text colors (global) */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

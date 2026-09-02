@@ -12,6 +12,7 @@ import LogoutModal from '../../components/global/LogoutModal';
 import { barthree, Hash, sedan, SUV } from '../../assets/export';
 import { GoAlertFill } from "react-icons/go";
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
+import { isDocumentRoute } from '../../utils/onboardingRedirect';
 
 const LICENSE_PLATE_REGEX = /^[A-Z0-9]{1,7}$/;
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/;
@@ -289,17 +290,13 @@ const AddVehicleDetails = () => {
       const currentIndex = location.state?.currentIndex ?? 0;
 
       if (fromVerified && Array.isArray(rejectedFlow) && rejectedFlow.length > 0) {
+        // Route by real progress, not by position in the rejected list: the driver may still
+        // owe another rejected document, or one that was never uploaded at all. Only when
+        // nothing is outstanding does this resolve to /subscription or /verified-account.
+        const nextRoute = getFirstIncompleteStep();
         const nextIndex = currentIndex + 1;
-        const routeMap = {
-          driverLicense: '/license-information',
-          vehicleRegistration: '/vehicle-details',
-          insurance: '/insurance-information',
-          vehicleDetails: '/add-vehicle-details',
-        };
 
-        if (nextIndex < rejectedFlow.length) {
-          const nextKey = rejectedFlow[nextIndex];
-          const nextRoute = routeMap[nextKey] || '/verified-account';
+        if (isDocumentRoute(nextRoute)) {
           navigate(nextRoute, {
             state: {
               formData,
@@ -316,7 +313,7 @@ const AddVehicleDetails = () => {
           return;
         }
 
-        navigate('/verified-account', {
+        navigate(nextRoute, {
           state: {
             formData,
             licenseData,
