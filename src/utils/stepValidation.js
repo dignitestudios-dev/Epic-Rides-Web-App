@@ -33,7 +33,22 @@ export const markStepCompleted = (step) => {
 // Get all completed steps
 export const getCompletedSteps = () => {
   const stored = localStorage.getItem('completedSteps');
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Replace the stored progress outright.
+ * Needed because `markStepCompleted` can only ever add: when server state says a step is
+ * *not* done, overwriting is the only way to clear progress that was recorded wrongly.
+ */
+export const setCompletedSteps = (steps) => {
+  localStorage.setItem('completedSteps', JSON.stringify(Array.isArray(steps) ? steps : []));
 };
 
 // Check if a step is completed

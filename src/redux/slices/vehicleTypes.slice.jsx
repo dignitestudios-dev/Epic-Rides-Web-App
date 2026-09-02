@@ -21,19 +21,24 @@ export const getVehicleTypes = createAsyncThunk(
 
       const result = data?.result || [];
       const normalized = result
-        .filter((item) => item?.rideType)
+        .filter((item) => item?.model || item?.rideType)
         .map((item) => {
           const rawModel = String(item.model || "").trim();
-          const rawType = String(item.rideType).trim();
+          const rawType = String(item.rideType || "").trim();
+          const lowerModel = rawModel.toLowerCase();
           const lowerType = rawType.toLowerCase();
-          const uniqueId = item._id || lowerType;
+          const uniqueId = item._id || lowerModel || lowerType;
           return {
             id: uniqueId,
             label: rawModel
               ? rawModel.charAt(0).toUpperCase() + rawModel.slice(1)
               : rawType.charAt(0).toUpperCase() + rawType.slice(1),
             value: uniqueId,
-            apiValue: lowerType,
+            // The documents endpoint expects the model ("sedan"/"suv"/"hatchback"),
+            // not the rideType ("economy"/"luxury"). Fall back only if model is missing.
+            apiValue: lowerModel || lowerType,
+            model: lowerModel,
+            rideType: lowerType,
           };
         });
 

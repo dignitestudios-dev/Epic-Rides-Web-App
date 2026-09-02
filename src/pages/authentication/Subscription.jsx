@@ -11,12 +11,14 @@ import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
 import {
   STEPS,
   arePreviousStepsCompleted,
-  getFirstIncompleteStep,
   clearAllSteps,
   isStepCompleted,
   markStepCompleted,
 } from '../../utils/stepValidation';
-import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import {
+  getFirstIncompleteDocumentRoute,
+  isProfileOnboarded,
+} from '../../utils/onboardingRedirect';
 import {
   clearSubscriptionCheckoutSession,
   getPostSubscriptionFlowState,
@@ -174,20 +176,18 @@ const Subscription = () => {
       }
     };
 
-    // Subscription-first login: stay here to buy until active (do not send to license-information)
-    if (!hasActiveSubscription(user)) {
-      fetchSubscriptionDetails();
-      return;
-    }
-
+    // The account must be complete before we ask for money. Only bounce when local progress
+    // *and* the server both say a step is outstanding: the cookie user isn't refreshed after
+    // each upload, so the server copy alone would eject drivers arriving straight from the wizard.
     if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-      const allDocsApproved =
-        user?.driverLicense?.status === 'approved' &&
-        user?.vehicleRegistration?.status === 'approved' &&
-        user?.insurance?.status === 'approved' &&
-        user?.vehicleDetails?.status === 'approved';
-      if (!allDocsApproved) {
-        navigate(getFirstIncompleteStep());
+      if (!isProfileOnboarded(user)) {
+        navigate('/signup', { replace: true });
+        return;
+      }
+
+      const pendingDocRoute = getFirstIncompleteDocumentRoute(user);
+      if (pendingDocRoute) {
+        navigate(pendingDocRoute, { replace: true });
         return;
       }
     }
