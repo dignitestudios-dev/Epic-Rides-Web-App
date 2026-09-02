@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadVehicleRegistrationDocuments } from '../../redux/slices/auth.slice';
+import { useAccountStatus } from '../../hooks/useAccountStatus';
 import { X } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { ErrorToast } from '../../components/global/Toaster';
@@ -10,16 +11,20 @@ import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import { barone } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
-import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
+import { fetchUrlAsFile, resolveRejectedDocForKey } from '../../utils/rejectedFlowPrefill';
 import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const VehicleDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete, isLoading } = useSelector((state) => state.auth);
+  const { user, stepToComplete, isLoading, rejectedDocuments: rejectedDocumentsRedux } =
+    useSelector((state) => state.auth);
   const formData = location.state?.formData || {};
   const licenseData = location.state?.licenseData || {};
+
+  // Refill from the server on load — router state does not survive a reload
+  useAccountStatus();
 
   const [frontImage, setFrontImage] = useState(null);
   const [frontImagePreview, setFrontImagePreview] = useState(null);
@@ -226,21 +231,16 @@ const VehicleDetails = () => {
     navigate('/license-information', { state: { formData } });
   };
 
-  React.useEffect(() => {
-    const fromVerified = location.state?.fromVerifiedAccount;
-    const rejectedList = location.state?.rejectedDocuments;
-    if (!fromVerified || !Array.isArray(rejectedList)) return;
-    const item = rejectedList.find((r) => r?.key === 'vehicleRegistration');
-    const doc = item?.doc;
-    if (!doc) return;
-    if (doc.frontImage) setFrontImagePreview(doc.frontImage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Prefill from the rejected document — router state when resubmitting in this tab,
+  // otherwise the account-status copy in redux so the data survives a reload.
+  // Rejection prefilling has been removed so the user is forced to upload new documents.
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
-    // Priority 1: If user is null, redirect to signup immediately
+    // Priority 1: If user is null, redirect to signup — unless a session cookie is present,
+    // in which case redux is still hydrating after a reload and the user is about to arrive.
     if (!user) {
+      if (Cookies.get('token') || Cookies.get('user')) return;
       navigate('/signup');
       return;
     }

@@ -20,8 +20,13 @@ import RideCancelled from "./pages/tracking/RideCancelled";
 import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
+import { useAccountStatus } from "./hooks/useAccountStatus";
 
 function App() {
+  // Start polling account status on a global level.
+  // It handles its own condition (only polls when logged in and active).
+  useAccountStatus({ pollMs: 10000 });
+
   return (
     <Routes>
       <Route

@@ -18,6 +18,7 @@ import { mergeRejectedDocumentsForResubmit } from '../../utils/rejectedFlowPrefi
 import { hasActiveSubscription } from '../../utils/onboardingRedirect';
 import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
 import { clearRejectedFlowState } from '../../redux/slices/auth.slice';
+import { useAccountStatus } from '../../hooks/useAccountStatus';
 
 const DOCUMENT_KEY_LABELS = {
   driverLicense: 'Driver License',
@@ -41,11 +42,11 @@ const prettifyRejectReason = (reason, key) => {
     s = s.replace(new RegExp(`^${escaped}\\s*[:\\-–—]?\\s*`, 'i'), '').trim();
     const label = formatDocumentKeyLabel(key);
     if (label !== key) {
-      s = s.replace(new RegExp(`^${label.replace(/\s+/g, '\\s+')}\\s*[:\\-–—]?\\s*`, 'i'), '').trim();
+      s = s.replace(new RegExp(`^${label.replace(/\\s+/g, '\\s+')}\\s*[:\\-–—]?\\s*`, 'i'), '').trim();
     }
   }
   if (!s) return reason.trim();
-  if (/^are\b/i.test(s)) {
+  if (/^are\\b/i.test(s)) {
     s = `Documents ${s}`;
   }
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -55,9 +56,6 @@ const VerifiedAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete, rejectedDocuments: rejectedDocumentsRedux } = useSelector(
-    (state) => state.auth
-  );
   const formData = location.state?.formData || {};
   const licenseData = location.state?.licenseData || {};
   const vehicleData = location.state?.vehicleData || {};
@@ -65,6 +63,17 @@ const VerifiedAccount = () => {
   const vehicleDetails = location.state?.vehicleDetails || {};
   const statusFromState = location.state?.status; // Get status from navigation state
   const rejectedDocsFromState = location.state?.rejectedDocuments; // Get rejectedDocuments from state
+
+  // Use the shared hook to poll account status and provide authoritative Redux values
+  const {
+    user,
+    stepToComplete,
+    rejectedDocuments: rejectedDocumentsRedux,
+    missingDocuments,
+    accountStatus: apiAccountStatusRaw
+  } = useAccountStatus({ pollMs: 10000 });
+  const apiRejectedDocuments = rejectedDocumentsRedux; // Both now point to Redux since hook populates it
+  const apiAccountStatus = apiAccountStatusRaw;
 
   console.log('=== VerifiedAccount Component ===');
   console.log('statusFromState:', statusFromState);
@@ -101,8 +110,6 @@ const VerifiedAccount = () => {
     };
   }, []);
 
-  // State to control which view to show: 'submitted', 'approved', 'rejected'
-  // Default to 'submitted', but can be overridden by status from location state
   const [accountStatus, setAccountStatus] = useState(() => {
     // If status is provided in location state, use it
     if (statusFromState) {
@@ -112,8 +119,6 @@ const VerifiedAccount = () => {
     // Otherwise default to 'submitted'
     return 'submitted';
   });
-  const [apiAccountStatus, setApiAccountStatus] = useState(null);
-  const [apiRejectedDocuments, setApiRejectedDocuments] = useState([]);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const hasRejectedDocsAnywhere = React.useMemo(() => {
@@ -137,61 +142,31 @@ const VerifiedAccount = () => {
   React.useEffect(() => {
     if (statusFromState !== 'submitted') return;
     dispatch(clearRejectedFlowState());
-    setApiRejectedDocuments([]);
-    setApiAccountStatus('pending');
     setAccountStatus('submitted');
   }, [statusFromState, dispatch]);
 
   // Check account status every 10 seconds from API.
   React.useEffect(() => {
-    const userId = user?._id;
-    if (!userId) return;
+    const hasRejectedFromApi = Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0;
 
-    const fetchAccountStatus = async () => {
-      try {
-        const response = await axios.get(`/api/auth/account-status/${userId}`, {
-          skipAuthRedirect: true,
-        });
-        const nextApiAccountStatus = response?.data?.data?.accountStatus;
-        const rejectedDocsFromApi = response?.data?.data?.rejectedDocuments;
-        const hasRejectedFromApi =
-          Array.isArray(rejectedDocsFromApi) && rejectedDocsFromApi.length > 0;
+    // Just-resubmitted: keep "submitted" until API reports a real reject again
+    if (statusFromState === 'submitted' && !hasRejectedFromApi) {
+      setAccountStatus('submitted');
+      return;
+    }
 
-        if (Array.isArray(rejectedDocsFromApi)) {
-          setApiRejectedDocuments(rejectedDocsFromApi);
-        }
-
-        if (nextApiAccountStatus) {
-          setApiAccountStatus(nextApiAccountStatus);
-        }
-
-        // Just-resubmitted: keep "submitted" until API reports a real reject again
-        if (statusFromState === 'submitted' && !hasRejectedFromApi) {
-          setAccountStatus('submitted');
-          return;
-        }
-
-        if (hasRejectedFromApi) {
-          setAccountStatus('rejected');
-        } else if (
-          nextApiAccountStatus &&
-          nextApiAccountStatus !== 'pending' &&
-          !allDocumentsPending
-        ) {
-          setAccountStatus(nextApiAccountStatus);
-        } else if (!hasRejectedFromApi && (allDocumentsPending || nextApiAccountStatus === 'pending')) {
-          setAccountStatus('submitted');
-        }
-      } catch (error) {
-        console.error('Failed to fetch account status', error);
-      }
-    };
-
-    fetchAccountStatus();
-    const intervalId = setInterval(fetchAccountStatus, 10000);
-
-    return () => clearInterval(intervalId);
-  }, [user?._id, statusFromState, allDocumentsPending]);
+    if (hasRejectedFromApi) {
+      setAccountStatus('rejected');
+    } else if (
+      apiAccountStatus &&
+      apiAccountStatus !== 'pending' &&
+      !allDocumentsPending
+    ) {
+      setAccountStatus(apiAccountStatus);
+    } else if (!hasRejectedFromApi && (allDocumentsPending || apiAccountStatus === 'pending')) {
+      setAccountStatus('submitted');
+    }
+  }, [apiAccountStatus, apiRejectedDocuments, statusFromState, allDocumentsPending]);
 
   // Ensure status stays as 'submitted' if all documents are pending
   React.useEffect(() => {
@@ -227,6 +202,7 @@ const VerifiedAccount = () => {
 
     // Source of rejected docs: location state, Redux, or user object
     const rejectedSet = new Set();
+    const missingSet = new Set(missingDocuments || []);
 
     if (rejectedDocsFromState && Array.isArray(rejectedDocsFromState)) {
       rejectedDocsFromState.forEach((doc) => doc.key && rejectedSet.add(doc.key));
@@ -244,7 +220,8 @@ const VerifiedAccount = () => {
       if (user?.vehicleDetails?.status === 'rejected') rejectedSet.add('vehicleDetails');
     }
 
-    const rejectedFlow = orderedKeys.filter((key) => rejectedSet.has(key));
+    // Include both rejected and missing documents in the resubmit flow
+    const rejectedFlow = orderedKeys.filter((key) => rejectedSet.has(key) || missingSet.has(key));
 
     if (rejectedFlow.length === 0) {
       // No rejected steps found, fallback
@@ -474,7 +451,8 @@ const VerifiedAccount = () => {
 
     // Priority 1: If user is null AND statusFromState is not 'rejected', redirect to signup
     if (!user && statusFromState !== 'rejected') {
-      console.log('❌ PRIORITY 1: No user and statusFromState is not rejected, redirecting to /signup');
+      if (Cookies.get('token') || Cookies.get('user')) return;
+      console.log('✅ PRIORITY 1: No user and statusFromState is not rejected, redirecting to /signup');
       navigate('/signup');
       return;
     }

@@ -18,6 +18,7 @@ import {
 import {
   getFirstIncompleteDocumentRoute,
   isProfileOnboarded,
+  resolvePostLoginRoute
 } from '../../utils/onboardingRedirect';
 import {
   clearSubscriptionCheckoutSession,
@@ -32,7 +33,7 @@ const Subscription = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete } = useSelector((state) => state.auth);
+  const { user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments } = useSelector((state) => state.auth);
   const authToken = Cookies.get('token');
 
   const formData = location.state?.formData || {};
@@ -176,18 +177,17 @@ const Subscription = () => {
       }
     };
 
-    // The account must be complete before we ask for money. Only bounce when local progress
-    // *and* the server both say a step is outstanding: the cookie user isn't refreshed after
-    // each upload, so the server copy alone would eject drivers arriving straight from the wizard.
+    // The account must be complete before we ask for money.
     if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-      if (!isProfileOnboarded(user)) {
-        navigate('/signup', { replace: true });
-        return;
-      }
-
-      const pendingDocRoute = getFirstIncompleteDocumentRoute(user);
-      if (pendingDocRoute) {
-        navigate(pendingDocRoute, { replace: true });
+      const route = resolvePostLoginRoute({
+        user,
+        stepToComplete,
+        isOnboarded,
+        rejectedDocuments,
+        pendingDocuments
+      });
+      if (route && route.path && route.path !== '/subscription') {
+        navigate(route.path, { replace: true, state: route.state });
         return;
       }
     }

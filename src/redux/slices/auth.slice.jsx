@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../axios";
 import Cookies from "js-cookie";
 import { ErrorToast, SuccessToast } from "../../components/global/Toaster";
+import { syncCompletedStepsFromUser } from "../../utils/onboardingRedirect";
 
 // ================= INITIAL STATE =================
 const initialState = {
@@ -19,6 +20,10 @@ const initialState = {
   rejectedDocuments: [],
   approvedDocuments: [],
   pendingDocuments: [],
+  missingDocuments: [],
+  accountStatus: null,
+  isAccountStatusLoading: false,
+  accountStatusLoadedAt: null,
 };
 
 // ================= THUNKS =================
@@ -89,6 +94,50 @@ export const verifyOtp = createAsyncThunk(
       const errorMessage = e.response?.data?.message || e.message || "OTP verification failed";
       ErrorToast(errorMessage);
       return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
+/**
+ * Authoritative onboarding state: profile, per-document status (with the metadata and S3 URLs
+ * needed to prefill a resubmit), plus rejected/pending/approved/missing lists.
+ *
+ * Called on load by every onboarding page — router state does not survive a reload, so this
+ * is what refills the forms. Runs silently: no toasts, and no auth redirect, because a
+ * transient failure here must never eject a driver mid-wizard.
+ */
+export const fetchAccountStatus = createAsyncThunk(
+  "auth/fetchAccountStatus",
+  async ({ driverId } = {}, thunkAPI) => {
+    const id = driverId || thunkAPI.getState()?.auth?.user?._id;
+    if (!id) {
+      return thunkAPI.rejectWithValue("Driver id not available");
+    }
+
+    try {
+      const res = await axios.get(`/api/auth/account-status/${id}`, {
+        skipAuthRedirect: true,
+      });
+      const { success, message, data } = res.data || {};
+
+      if (!success || !data) {
+        return thunkAPI.rejectWithValue(message || "Failed to fetch account status");
+      }
+
+      return {
+        user: data.user || null,
+        accountStatus: data.accountStatus ?? null,
+        isOnboarded: data.isOnboarded,
+        stepToComplete: data.stepToComplete ?? null,
+        approvedDocuments: data.approvedDocuments || [],
+        pendingDocuments: data.pendingDocuments || [],
+        rejectedDocuments: data.rejectedDocuments || [],
+        missingDocuments: data.missingDocuments || [],
+      };
+    } catch (e) {
+      return thunkAPI.rejectWithValue(
+        e.response?.data?.message || e.message || "Failed to fetch account status"
+      );
     }
   }
 );
@@ -344,7 +393,6 @@ export const uploadVehicleDetails = createAsyncThunk(
       formData.append("color", vehicleDetails.color || "");
       formData.append("vehicleIdentificationNumber", vehicleDetails.vehicleIdentificationNumber || "");
       formData.append("licensePlateNumber", vehicleDetails.licensePlateNumber || "");
-      formData.append("registrationNumber", vehicleDetails.registrationNumber || "");
       formData.append("regionOfRegistration", vehicleDetails.stateRegion || "");
       formData.append("expiryDate", vehicleDetails.registrationExpiryDate || "");
       formData.append("vehicleType", vehicleDetails.vehicleType || "Sedan");
@@ -417,6 +465,7 @@ const authSlice = createSlice({
           if (parsed && typeof parsed === "object") {
             state.user = parsed;
             state.isAuthenticated = Boolean(state.token);
+            state.isOnboarded = Boolean(parsed.firstName || parsed.email);
           }
         } catch {
           // ignore invalid cookie JSON
@@ -442,6 +491,9 @@ const authSlice = createSlice({
       state.rejectedDocuments = [];
       state.approvedDocuments = [];
       state.pendingDocuments = [];
+      state.missingDocuments = [];
+      state.accountStatus = null;
+      state.accountStatusLoadedAt = null;
       state.isOnboarded = false;
     },
     /** After rejected docs are resubmitted — clear stale reject state so UI shows under review. */
@@ -474,6 +526,50 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Account status (background refresh — never flips global isLoading)
+      .addCase(fetchAccountStatus.pending, (state) => {
+        state.isAccountStatusLoading = true;
+      })
+      .addCase(fetchAccountStatus.fulfilled, (state, action) => {
+        const {
+          user,
+          accountStatus,
+          isOnboarded,
+          stepToComplete,
+          approvedDocuments,
+          pendingDocuments,
+          rejectedDocuments,
+          missingDocuments,
+        } = action.payload;
+
+        state.isAccountStatusLoading = false;
+        state.accountStatusLoadedAt = Date.now();
+
+        if (user) {
+          // Merge: this response omits a few fields verify-otp sends (e.g. role)
+          state.user = { ...(state.user || {}), ...user };
+          try {
+            Cookies.set("user", JSON.stringify(state.user), { expires: 7 });
+          } catch {
+            // ignore cookie write errors
+          }
+        }
+
+        state.accountStatus = accountStatus;
+        if (typeof isOnboarded === "boolean") state.isOnboarded = isOnboarded;
+        state.stepToComplete = stepToComplete;
+        state.approvedDocuments = approvedDocuments;
+        state.pendingDocuments = pendingDocuments;
+        state.rejectedDocuments = rejectedDocuments;
+        state.missingDocuments = missingDocuments;
+
+        // Keep local wizard progress aligned with server truth on every refresh
+        syncCompletedStepsFromUser(state.user, state.isOnboarded);
+      })
+      .addCase(fetchAccountStatus.rejected, (state) => {
+        // Deliberately silent: keep whatever state we already had
+        state.isAccountStatusLoading = false;
+      })
       // Send OTP
       .addCase(sendOtp.pending, (state) => {
         state.isLoading = true;

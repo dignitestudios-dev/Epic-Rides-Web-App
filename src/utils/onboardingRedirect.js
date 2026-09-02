@@ -28,7 +28,7 @@ const DOC_KEY_TO_STEP = [
  * for callers that don't have the flag.
  */
 export const isProfileOnboarded = (user, isOnboarded) => {
-  if (typeof isOnboarded === 'boolean') return isOnboarded;
+  if (isOnboarded === true) return true;
   return Boolean(user?.firstName || user?.email);
 };
 
@@ -190,18 +190,18 @@ export const resolvePostLoginRoute = ({
     };
   }
 
-  // 3. Server-declared next step (top-level, or embedded on the user)
+  // 3. First document still needing upload (Enforces UI wizard order)
+  const docRoute = getFirstIncompleteDocumentRoute(user);
+  if (docRoute) {
+    return { path: docRoute };
+  }
+
+  // 4. Server-declared next step (fallback)
   const rawStep = stepToComplete ?? user?.stepToComplete;
   const step = rawStep == null || rawStep === '' ? '' : String(rawStep).trim();
 
   if (step && DOC_KEY_TO_ROUTE[step]) {
     return { path: DOC_KEY_TO_ROUTE[step] };
-  }
-
-  // 4. First document still needing upload
-  const docRoute = getFirstIncompleteDocumentRoute(user);
-  if (docRoute) {
-    return { path: docRoute };
   }
 
   // 5. Every document is in — only now may the driver be asked to pay
@@ -218,7 +218,10 @@ export const resolvePostLoginRoute = ({
   }
 
   if (areAllDocumentsApproved(user)) {
-    return { path: '/subscription' };
+    return { 
+      path: '/verified-account',
+      state: { status: 'approved' }
+    };
   }
 
   return { path: getFirstIncompleteStep() };

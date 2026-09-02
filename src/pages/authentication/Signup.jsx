@@ -15,7 +15,7 @@ import { markStepCompleted, STEPS, clearAllSteps, isStepCompleted, getFirstIncom
 import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 import { loadGoogleMapsPlaces } from '../../utils/loadGoogleMapsPlaces';
 
-const NAME_MAX_LENGTH = 15;
+const NAME_MAX_LENGTH = 40;
 const NAME_ALPHA_REGEX = /^[A-Za-z]+$/;
 const ADDRESS_MIN_LENGTH = 5;
 const ADDRESS_MAX_LENGTH = 255;
