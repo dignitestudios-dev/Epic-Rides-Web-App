@@ -79,7 +79,6 @@ const AddVehicleDetails = () => {
     color: '',
     vehicleIdentificationNumber: '',
     licensePlateNumber: '',
-    registrationNumber: '',
     stateRegion: '',
     registrationExpiryDate: '',
     vehicleType: ''
@@ -132,16 +131,7 @@ const AddVehicleDetails = () => {
       return;
     }
 
-    // Registration number: uppercase letters + numbers, max 8
-    if (name === 'registrationNumber') {
-      const sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const limitedValue = sanitizedValue.slice(0, 8);
-      setVehicleDetails((prev) => ({
-        ...prev,
-        [name]: limitedValue,
-      }));
-      return;
-    }
+
 
     // Generic length limits for text fields
     if (name === 'make' || name === 'model' || name === 'color' || name === 'stateRegion') {
@@ -196,7 +186,6 @@ const AddVehicleDetails = () => {
       color: 'Color',
       vehicleIdentificationNumber: 'Vehicle Identification Number',
       licensePlateNumber: 'License Plate Number',
-      registrationNumber: 'Registration Number',
       stateRegion: 'State/Region Of Registration',
       registrationExpiryDate: 'Registration Expiry Date',
       vehicleType: 'Vehicle Type'
@@ -206,7 +195,7 @@ const AddVehicleDetails = () => {
     const requiredFields = [
       'make', 'model', 'yearOfManufacture', 'color',
       'vehicleIdentificationNumber', 'licensePlateNumber',
-      'registrationNumber', 'stateRegion', 'registrationExpiryDate', 'vehicleType'
+      'stateRegion', 'registrationExpiryDate', 'vehicleType'
     ];
 
     const errors = {};
@@ -255,13 +244,6 @@ const AddVehicleDetails = () => {
       !VIN_REGEX.test(vehicleDetails.vehicleIdentificationNumber.trim())
     ) {
       errors.vehicleIdentificationNumber = 'Vehicle Identification Number must be 17 valid characters';
-    }
-
-    if (
-      vehicleDetails.registrationNumber &&
-      !REGISTRATION_NUMBER_REGEX.test(vehicleDetails.registrationNumber.trim())
-    ) {
-      errors.registrationNumber = 'Registration Number format is invalid';
     }
 
     // If there are errors, set them and return
@@ -392,7 +374,6 @@ const AddVehicleDetails = () => {
       'color',
       'vehicleIdentificationNumber',
       'licensePlateNumber',
-      'registrationNumber',
       'stateRegion',
       'registrationExpiryDate',
       'vehicleType',
@@ -642,31 +623,6 @@ const AddVehicleDetails = () => {
                 )}
               </div>
 
-              {/* Registration Number */}
-              <div className="flex flex-col items-start gap-1 w-full md:w-[380px]">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  name="registrationNumber"
-                  value={vehicleDetails.registrationNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter registration number"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.registrationNumber ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: vehicleDetails.registrationNumber ? '#FFFFFF' : '#808080'
-                  }}
-                />
-                {fieldErrors.registrationNumber && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.registrationNumber}
-                  </span>
-                )}
-              </div>
             </div>
 
             {/* Middle Column */}

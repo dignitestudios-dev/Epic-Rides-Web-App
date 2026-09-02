@@ -344,7 +344,6 @@ export const uploadVehicleDetails = createAsyncThunk(
       formData.append("color", vehicleDetails.color || "");
       formData.append("vehicleIdentificationNumber", vehicleDetails.vehicleIdentificationNumber || "");
       formData.append("licensePlateNumber", vehicleDetails.licensePlateNumber || "");
-      formData.append("registrationNumber", vehicleDetails.registrationNumber || "");
       formData.append("regionOfRegistration", vehicleDetails.stateRegion || "");
       formData.append("expiryDate", vehicleDetails.registrationExpiryDate || "");
       formData.append("vehicleType", vehicleDetails.vehicleType || "Sedan");

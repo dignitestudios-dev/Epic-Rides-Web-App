@@ -116,6 +116,7 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
  */
 export const resolvePostLoginRoute = ({
   user,
+  isOnboarded,
   stepToComplete,
   rejectedDocuments = [],
   pendingDocuments = [],
@@ -125,17 +126,11 @@ export const resolvePostLoginRoute = ({
       ? pendingDocuments
       : user?.pendingDocuments ?? [];
 
-  if (!user) {
+  if (!user || isOnboarded === false) {
     return { path: '/signup' };
   }
 
-  // 1. Subscription first — no `subscription` or not active → buy before docs/verified
-  if (needsSubscriptionPurchase(user)) {
-    syncCompletedStepsFromUser(user);
-    return { path: '/subscription' };
-  }
-
-  // 2. Active subscription + rejected docs → rejected summary (not license-information)
+  // 1. Active subscription + rejected docs → rejected summary
   if (hasRejectedDocuments(user, rejectedDocuments)) {
     syncCompletedStepsFromUser(user);
     return {
@@ -171,7 +166,7 @@ export const resolvePostLoginRoute = ({
     };
   }
 
-  if (areAllDocumentsApproved(user)) {
+  if (areAllDocumentsApproved(user) && !hasActiveSubscription(user)) {
     syncCompletedStepsFromUser(user);
     return { path: '/subscription' };
   }
