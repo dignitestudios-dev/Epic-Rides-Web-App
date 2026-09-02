@@ -369,8 +369,6 @@ const AddVehicleDetails = () => {
     navigate('/insurance-information', { state: { formData, licenseData, vehicleData } });
   };
 
-  // Prefill from the rejected document — router state when resubmitting in this tab,
-  // otherwise the account-status copy in redux so the data survives a reload.
   const hasPrefilledRef = useRef(false);
   const rejectedDoc = resolveRejectedDocForKey('vehicleDetails', {
     rejectedDocsFromState: location.state?.rejectedDocuments,
@@ -378,7 +376,53 @@ const AddVehicleDetails = () => {
     user,
   });
 
-  // Rejection prefilling has been removed so the user is forced to upload new documents.
+  React.useEffect(() => {
+    if (hasPrefilledRef.current) return;
+    const doc = rejectedDoc;
+    if (!doc) return;
+    hasPrefilledRef.current = true;
+    const meta = doc.metadata && typeof doc.metadata === 'object' ? doc.metadata : {};
+    const formKeys = new Set([
+      'make',
+      'model',
+      'yearOfManufacture',
+      'color',
+      'vehicleIdentificationNumber',
+      'licensePlateNumber',
+      'stateRegion',
+      'registrationExpiryDate',
+      'vehicleType',
+    ]);
+    const fromDoc = { ...meta };
+    Object.keys(doc).forEach((k) => {
+      if (formKeys.has(k) && doc[k] != null && doc[k] !== '') fromDoc[k] = doc[k];
+    });
+    const apiMerged = { ...meta, ...doc };
+    if (fromDoc.vehicleType != null && fromDoc.vehicleType !== '') {
+      pendingVehicleTypeRef.current = String(fromDoc.vehicleType);
+    }
+    setVehicleDetails((prev) => {
+      const next = { ...prev };
+      Object.entries(fromDoc).forEach(([k, v]) => {
+        if (!formKeys.has(k) || v == null || v === '') return;
+        // vehicleType is resolved against the loaded option list, not copied verbatim
+        if (k === 'vehicleType') return;
+        next[k] =
+          k === 'registrationExpiryDate'
+            ? normalizeRegistrationExpiryForInput(v)
+            : String(v);
+      });
+      const region = apiMerged.regionOfRegistration;
+      if (region != null && region !== '') {
+        next.stateRegion = String(region);
+      }
+      const expiry = apiMerged.expiryDate;
+      if (expiry != null && expiry !== '') {
+        next.registrationExpiryDate = normalizeRegistrationExpiryForInput(expiry);
+      }
+      return next;
+    });
+  }, [rejectedDoc]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {

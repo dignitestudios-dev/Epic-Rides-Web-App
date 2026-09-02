@@ -440,7 +440,36 @@ const LicenseInformation = () => {
 
   // Prefill from the rejected document — router state when resubmitting in this tab,
   // otherwise the account-status copy in redux so the data survives a reload.
-  // Rejection prefilling has been removed so the user is forced to upload new documents.
+  const hasPrefilledRef = useRef(false);
+  const rejectedDoc = resolveRejectedDocForKey('driverLicense', {
+    rejectedDocsFromState: location.state?.rejectedDocuments,
+    rejectedDocumentsRedux,
+    user,
+  });
+
+  React.useEffect(() => {
+    if (hasPrefilledRef.current) return;
+    const doc = rejectedDoc;
+    if (!doc) return;
+    hasPrefilledRef.current = true;
+    const meta = doc.metadata || {};
+    const num =
+      meta.licenseNumber != null && String(meta.licenseNumber).trim() !== ''
+        ? String(meta.licenseNumber).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15)
+        : '';
+    const exp =
+      meta.expiryDate != null && String(meta.expiryDate).trim() !== ''
+        ? String(meta.expiryDate).slice(0, 10)
+        : '';
+    if (num || exp) {
+      setLicenseData((prev) => ({
+        ...prev,
+        ...(num ? { licenseNumber: num } : {}),
+        ...(exp ? { expiryDate: exp } : {}),
+      }));
+    }
+    // Intentionally omitting frontImage and backImage prefilling so the user must re-upload.
+  }, [rejectedDoc]);
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
     // Priority 1: If user is null, redirect to signup — unless a session cookie is present,
