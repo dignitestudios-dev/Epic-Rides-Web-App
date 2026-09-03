@@ -112,7 +112,7 @@ export default function Verification() {
           }
           
           // Get stepToComplete without trim if null/undefined
-          const stepToCompleteRaw = result?.stepToComplete;
+          const stepToCompleteRaw = result?.stepToComplete ?? result?.user?.stepToComplete;
           const stepToComplete = stepToCompleteRaw ? stepToCompleteRaw.trim() : stepToCompleteRaw;
           const userData = result?.user;
           const rejectedDocuments = result?.rejectedDocuments || [];
@@ -130,6 +130,7 @@ export default function Verification() {
           const { path, state } = resolvePostLoginRoute({
             user: userData,
             stepToComplete,
+            isOnboarded: result?.isOnboarded,
             rejectedDocuments,
             pendingDocuments,
           });

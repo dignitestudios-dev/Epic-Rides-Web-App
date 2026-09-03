@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadVehicleDetails } from '../../redux/slices/auth.slice';
 import { getVehicleTypes } from '../../redux/slices/vehicleTypes.slice';
+import { useAccountStatus } from '../../hooks/useAccountStatus';
+import { resolveRejectedDocForKey } from '../../utils/rejectedFlowPrefill';
 import { Info, Check, TriangleAlertIcon } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { ErrorToast } from '../../components/global/Toaster';
@@ -15,7 +17,6 @@ import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncomplete
 
 const LICENSE_PLATE_REGEX = /^[A-Z0-9]{1,7}$/;
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/;
-const REGISTRATION_NUMBER_REGEX = /^[A-Z0-9]{1,8}$/;
 
 /** API may send ISO datetime; <input type="date"> needs YYYY-MM-DD. */
 function normalizeRegistrationExpiryForInput(value) {
@@ -35,10 +36,14 @@ const AddVehicleDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete, isLoading } = useSelector((state) => state.auth);
+  const { user, stepToComplete, isLoading, rejectedDocuments: rejectedDocumentsRedux } =
+    useSelector((state) => state.auth);
   const { list: vehicleTypeOptions = [], isLoading: isVehicleTypesLoading = false } = useSelector(
     (state) => state.vehicleTypes || {}
   );
+
+  // Refill from the server on load — router state does not survive a reload
+  useAccountStatus();
   const hasVehicleTypes = vehicleTypeOptions.length > 0;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const formData = location.state?.formData || {};
@@ -79,13 +84,19 @@ const AddVehicleDetails = () => {
     color: '',
     vehicleIdentificationNumber: '',
     licensePlateNumber: '',
-    registrationNumber: '',
     stateRegion: '',
     registrationExpiryDate: '',
     vehicleType: ''
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  /**
+   * The API stores the vehicle type as its *value* ("sedan"), but the picker's options are
+   * keyed by Mongo `_id`. On resubmit the raw API value is parked here until the type list
+   * loads, then resolved to the matching option id — otherwise nothing matches and the
+   * "default to first option" effect below silently selects the wrong vehicle.
+   */
+  const pendingVehicleTypeRef = useRef('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -125,17 +136,6 @@ const AddVehicleDetails = () => {
     if (name === 'licensePlateNumber') {
       const sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       const limitedValue = sanitizedValue.slice(0, 7);
-      setVehicleDetails((prev) => ({
-        ...prev,
-        [name]: limitedValue,
-      }));
-      return;
-    }
-
-    // Registration number: uppercase letters + numbers, max 8
-    if (name === 'registrationNumber') {
-      const sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const limitedValue = sanitizedValue.slice(0, 8);
       setVehicleDetails((prev) => ({
         ...prev,
         [name]: limitedValue,
@@ -196,7 +196,6 @@ const AddVehicleDetails = () => {
       color: 'Color',
       vehicleIdentificationNumber: 'Vehicle Identification Number',
       licensePlateNumber: 'License Plate Number',
-      registrationNumber: 'Registration Number',
       stateRegion: 'State/Region Of Registration',
       registrationExpiryDate: 'Registration Expiry Date',
       vehicleType: 'Vehicle Type'
@@ -206,7 +205,7 @@ const AddVehicleDetails = () => {
     const requiredFields = [
       'make', 'model', 'yearOfManufacture', 'color',
       'vehicleIdentificationNumber', 'licensePlateNumber',
-      'registrationNumber', 'stateRegion', 'registrationExpiryDate', 'vehicleType'
+      'stateRegion', 'registrationExpiryDate', 'vehicleType'
     ];
 
     const errors = {};
@@ -257,13 +256,6 @@ const AddVehicleDetails = () => {
       errors.vehicleIdentificationNumber = 'Vehicle Identification Number must be 17 valid characters';
     }
 
-    if (
-      vehicleDetails.registrationNumber &&
-      !REGISTRATION_NUMBER_REGEX.test(vehicleDetails.registrationNumber.trim())
-    ) {
-      errors.registrationNumber = 'Registration Number format is invalid';
-    }
-
     // If there are errors, set them and return
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -285,7 +277,7 @@ const AddVehicleDetails = () => {
     );
     const payloadVehicleDetails = {
       ...vehicleDetails,
-      vehicleType: selectedVehicleType?.apiValue || vehicleDetails.vehicleType,
+      vehicleType: selectedVehicleType?.model || vehicleDetails.vehicleType,
     };
 
     try {
@@ -377,14 +369,36 @@ const AddVehicleDetails = () => {
     navigate('/insurance-information', { state: { formData, licenseData, vehicleData } });
   };
 
+  const hasPrefilledRef = useRef(false);
+  const rejectedDoc = resolveRejectedDocForKey('vehicleDetails', {
+    rejectedDocsFromState: location.state?.rejectedDocuments,
+    rejectedDocumentsRedux,
+    user,
+  });
+
   React.useEffect(() => {
-    const fromVerified = location.state?.fromVerifiedAccount;
-    const rejectedList = location.state?.rejectedDocuments;
-    if (!fromVerified || !Array.isArray(rejectedList)) return;
-    const item = rejectedList.find((r) => r?.key === 'vehicleDetails');
-    const doc = item?.doc;
-    if (!doc) return;
-    const meta = doc.metadata && typeof doc.metadata === 'object' ? doc.metadata : {};
+    if (hasPrefilledRef.current) return;
+    
+    let sourceData = null;
+    
+    // First try to get it from rejected document metadata
+    if (rejectedDoc) {
+       sourceData = rejectedDoc.metadata && typeof rejectedDoc.metadata === 'object' 
+        ? { ...rejectedDoc, ...rejectedDoc.metadata } 
+        : rejectedDoc;
+    } 
+    // Fallback to user.vehicles[0]
+    else if (user && user.vehicles && user.vehicles.length > 0) {
+       const vehicle = user.vehicles[0];
+       if (vehicle.make || vehicle.model) {
+           sourceData = vehicle;
+       }
+    }
+    
+    if (!sourceData) return;
+    
+    hasPrefilledRef.current = true;
+
     const formKeys = new Set([
       'make',
       'model',
@@ -392,42 +406,48 @@ const AddVehicleDetails = () => {
       'color',
       'vehicleIdentificationNumber',
       'licensePlateNumber',
-      'registrationNumber',
       'stateRegion',
       'registrationExpiryDate',
       'vehicleType',
     ]);
-    const fromDoc = { ...meta };
-    Object.keys(doc).forEach((k) => {
-      if (formKeys.has(k) && doc[k] != null && doc[k] !== '') fromDoc[k] = doc[k];
-    });
-    const apiMerged = { ...meta, ...doc };
+
+    if (sourceData.vehicleType != null && sourceData.vehicleType !== '') {
+      pendingVehicleTypeRef.current = String(sourceData.vehicleType);
+    }
+
     setVehicleDetails((prev) => {
       const next = { ...prev };
-      Object.entries(fromDoc).forEach(([k, v]) => {
+      Object.entries(sourceData).forEach(([k, v]) => {
         if (!formKeys.has(k) || v == null || v === '') return;
+        // vehicleType is resolved against the loaded option list, not copied verbatim
+        if (k === 'vehicleType') return;
         next[k] =
           k === 'registrationExpiryDate'
             ? normalizeRegistrationExpiryForInput(v)
             : String(v);
       });
-      const region = apiMerged.regionOfRegistration;
+      
+      // Map regionOfRegistration if stateRegion isn't directly matching but it's present in the model
+      const region = sourceData.stateRegion || sourceData.regionOfRegistration;
       if (region != null && region !== '') {
         next.stateRegion = String(region);
       }
-      const expiry = apiMerged.expiryDate;
+      
+      const expiry = sourceData.registrationExpiryDate || sourceData.expiryDate;
       if (expiry != null && expiry !== '') {
         next.registrationExpiryDate = normalizeRegistrationExpiryForInput(expiry);
       }
+      
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, rejectedDoc]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
-    // Priority 1: If user is null, redirect to signup immediately
+    // Priority 1: If user is null, redirect to signup — unless a session cookie is present,
+    // in which case redux is still hydrating after a reload and the user is about to arrive.
     if (!user) {
+      if (Cookies.get('token') || Cookies.get('user')) return;
       navigate('/signup');
       return;
     }
@@ -477,9 +497,31 @@ const AddVehicleDetails = () => {
     dispatch(getVehicleTypes());
   }, [dispatch]);
 
+  // Resolve a resubmitted vehicle type ("sedan", or a legacy rideType like "economy") to its option
+  React.useEffect(() => {
+    if (isVehicleTypesLoading || vehicleTypeOptions.length === 0) return;
+
+    const raw = pendingVehicleTypeRef.current;
+    if (!raw) return;
+
+    const needle = String(raw).trim().toLowerCase();
+    const match = vehicleTypeOptions.find((opt) =>
+      [opt.value, opt.id, opt.apiValue, opt.model, opt.rideType, opt.label].some(
+        (candidate) => candidate && String(candidate).toLowerCase() === needle
+      )
+    );
+
+    pendingVehicleTypeRef.current = '';
+    if (!match) return; // no match: fall through to the default-select effect below
+
+    setVehicleDetails((prev) => ({ ...prev, vehicleType: match.value }));
+  }, [isVehicleTypesLoading, vehicleTypeOptions]);
+
   // Default-select first vehicle type once options are loaded
   React.useEffect(() => {
     if (isVehicleTypesLoading || vehicleTypeOptions.length === 0) return;
+    // Wait for a resubmitted value to be resolved first, so we don't overwrite it
+    if (pendingVehicleTypeRef.current) return;
 
     const firstValue = vehicleTypeOptions[0]?.value;
     if (!firstValue) return;
@@ -642,31 +684,6 @@ const AddVehicleDetails = () => {
                 )}
               </div>
 
-              {/* Registration Number */}
-              <div className="flex flex-col items-start gap-1 w-full md:w-[380px]">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  name="registrationNumber"
-                  value={vehicleDetails.registrationNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter registration number"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.registrationNumber ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: vehicleDetails.registrationNumber ? '#FFFFFF' : '#808080'
-                  }}
-                />
-                {fieldErrors.registrationNumber && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.registrationNumber}
-                  </span>
-                )}
-              </div>
             </div>
 
             {/* Middle Column */}

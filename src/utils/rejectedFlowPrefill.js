@@ -41,6 +41,33 @@ export function mergeRejectedDocumentsForResubmit(rejectedFlow, {
   });
 }
 
+/**
+ * Find the rejected document to prefill a step from, newest source first.
+ *
+ * Router state is only present when the user clicked Resubmit in this tab; after a reload it
+ * is gone, which is why the redux copy (filled by the account-status call) and the user object
+ * are checked as well. Only ever returns a *rejected* document — a pending or approved one
+ * must not be reopened for editing.
+ */
+export function resolveRejectedDocForKey(key, {
+  rejectedDocsFromState = [],
+  rejectedDocumentsRedux = [],
+  user,
+} = {}) {
+  const fromState = (rejectedDocsFromState || []).find((d) => d?.key === key)?.doc;
+  if (fromState && typeof fromState === 'object') return fromState;
+
+  const fromRedux = (rejectedDocumentsRedux || []).find((d) => d?.key === key)?.doc;
+  if (fromRedux && typeof fromRedux === 'object') return fromRedux;
+
+  const fromUser = user?.[key];
+  if (fromUser && typeof fromUser === 'object' && fromUser.status === 'rejected') {
+    return fromUser;
+  }
+
+  return null;
+}
+
 /** Fetch remote image URL as File for re-upload (S3 must allow CORS). */
 export async function fetchUrlAsFile(url, baseName = "image") {
   if (!url || typeof url !== "string" || !/^https?:\/\//i.test(url)) return null;

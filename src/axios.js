@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 // export const baseUrl = "https://api.dev.epicridesapp.com";
-  //  export const baseUrl = "https://api.staging.epicridesapp.com";
-  export const baseUrl = "https://api.epicridesapp.com";
+export const baseUrl = "https://api.staging.epicridesapp.com";
+// export const baseUrl = "https://api.epicridesapp.com";
 // export const baseUrl = "https://kv6hzw0r-3001.inc1.devtunnels.ms";
 // export const baseUrl = "https://155e-45-199-187-86.ngrok-free.app";
 
@@ -56,7 +56,7 @@ instance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 const TIMEOUT_MESSAGE = "The request timed out. Please try again.";
@@ -64,7 +64,8 @@ const TIMEOUT_MESSAGE = "The request timed out. Please try again.";
 const isTimeoutError = (error) =>
   error?.code === "ECONNABORTED" ||
   error?.code === "ETIMEDOUT" ||
-  (typeof error?.message === "string" && error.message.toLowerCase().includes("timeout"));
+  (typeof error?.message === "string" &&
+    error.message.toLowerCase().includes("timeout"));
 
 instance.interceptors.response.use(
   (response) => response,
@@ -117,7 +118,7 @@ instance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default instance;

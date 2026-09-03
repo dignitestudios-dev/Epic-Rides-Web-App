@@ -11,12 +11,15 @@ import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
 import {
   STEPS,
   arePreviousStepsCompleted,
-  getFirstIncompleteStep,
   clearAllSteps,
   isStepCompleted,
   markStepCompleted,
 } from '../../utils/stepValidation';
-import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import {
+  getFirstIncompleteDocumentRoute,
+  isProfileOnboarded,
+  resolvePostLoginRoute
+} from '../../utils/onboardingRedirect';
 import {
   clearSubscriptionCheckoutSession,
   getPostSubscriptionFlowState,
@@ -30,7 +33,7 @@ const Subscription = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete } = useSelector((state) => state.auth);
+  const { user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments } = useSelector((state) => state.auth);
   const authToken = Cookies.get('token');
 
   const formData = location.state?.formData || {};
@@ -133,6 +136,23 @@ const Subscription = () => {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    
+    // Re-verify route on every update (e.g. from background polling)
+    const route = resolvePostLoginRoute({
+      user,
+      stepToComplete,
+      isOnboarded,
+      rejectedDocuments,
+      pendingDocuments
+    });
+
+    if (route && route.path && route.path !== '/subscription') {
+      navigate(route.path, { state: route.state, replace: true });
+    }
+  }, [user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments, navigate]);
+
+  useEffect(() => {
     if (!user && authToken) {
       dispatch(hydrateAuthFromCookies());
       return;
@@ -174,27 +194,9 @@ const Subscription = () => {
       }
     };
 
-    // Subscription-first login: stay here to buy until active (do not send to license-information)
-    if (!hasActiveSubscription(user)) {
-      fetchSubscriptionDetails();
-      return;
-    }
-
-    if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-      const allDocsApproved =
-        user?.driverLicense?.status === 'approved' &&
-        user?.vehicleRegistration?.status === 'approved' &&
-        user?.insurance?.status === 'approved' &&
-        user?.vehicleDetails?.status === 'approved';
-      if (!allDocsApproved) {
-        navigate(getFirstIncompleteStep());
-        return;
-      }
-    }
-
     fetchSubscriptionDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authToken, stepToComplete, navigate, dispatch]);
+  }, [user?._id, authToken, navigate, dispatch]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);

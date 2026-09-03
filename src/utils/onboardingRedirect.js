@@ -1,4 +1,4 @@
-import { STEPS, markStepCompleted, getFirstIncompleteStep } from './stepValidation';
+import { STEPS, setCompletedSteps, getFirstIncompleteStep } from './stepValidation';
 
 const DOCUMENT_KEYS = [
   'driverLicense',
@@ -12,6 +12,24 @@ const DOC_KEY_TO_ROUTE = {
   vehicleRegistration: '/vehicle-details',
   insurance: '/insurance-information',
   vehicleDetails: '/add-vehicle-details',
+};
+
+/** Document key → the wizard step that uploads it, in wizard order. */
+const DOC_KEY_TO_STEP = [
+  ['driverLicense', STEPS.LICENSE_INFORMATION],
+  ['vehicleRegistration', STEPS.VEHICLE_DETAILS],
+  ['insurance', STEPS.INSURANCE_INFORMATION],
+  ['vehicleDetails', STEPS.ADD_VEHICLE_DETAILS],
+];
+
+/**
+ * `isOnboarded === false` means the "Your Details" step never completed, so there is no
+ * profile yet. The API sends it alongside the user; the name/email check is only a fallback
+ * for callers that don't have the flag.
+ */
+export const isProfileOnboarded = (user, isOnboarded) => {
+  if (isOnboarded === true) return true;
+  return Boolean(user?.firstName || user?.email);
 };
 
 export const areAllDocumentsApproved = (user) => {
@@ -63,20 +81,39 @@ export const shouldRedirectToSubscription = (user, pendingDocuments = []) => {
   return areAllDocumentsPendingReview(user, pendingDocuments);
 };
 
-/** Sync local step progress when API shows onboarding is already done. */
-export const syncCompletedStepsFromUser = (user) => {
-  if (!user) return;
-  markStepCompleted(STEPS.SIGNUP);
-  markStepCompleted(STEPS.LICENSE_INFORMATION);
-  markStepCompleted(STEPS.VEHICLE_DETAILS);
-  markStepCompleted(STEPS.INSURANCE_INFORMATION);
-  markStepCompleted(STEPS.ADD_VEHICLE_DETAILS);
-  if (hasActiveSubscription(user)) {
-    markStepCompleted(STEPS.SUBSCRIPTION);
+/**
+ * Local step progress, derived from what the server actually says is done.
+ * Stops at the first step that still needs the user, so the stored array stays a true
+ * prefix of the wizard — which is what `arePreviousStepsCompleted` assumes.
+ */
+export const computeCompletedStepsFromUser = (user, isOnboarded) => {
+  if (!user || !isProfileOnboarded(user, isOnboarded)) return [];
+
+  const steps = [STEPS.SIGNUP];
+
+  for (const [key, step] of DOC_KEY_TO_STEP) {
+    if (documentNeedsUserAction(user[key])) return steps;
+    steps.push(step);
   }
+
+  if (hasActiveSubscription(user)) {
+    steps.push(STEPS.SUBSCRIPTION);
+  }
+
+  return steps;
 };
 
-const getFirstIncompleteDocumentRoute = (user) => {
+/**
+ * Overwrite local progress with server truth.
+ * This *replaces* rather than adds: earlier builds marked every step complete for any user,
+ * and that stale localStorage is what pinned drivers on /subscription across reloads.
+ */
+export const syncCompletedStepsFromUser = (user, isOnboarded) => {
+  if (!user) return;
+  setCompletedSteps(computeCompletedStepsFromUser(user, isOnboarded));
+};
+
+export const getFirstIncompleteDocumentRoute = (user) => {
   if (!user) return '/signup';
   for (const key of DOCUMENT_KEYS) {
     if (documentNeedsUserAction(user[key])) {
@@ -108,15 +145,20 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
 };
 
 /**
- * Post-login route order:
- * 1. Subscription (if missing or not active)
- * 2. Verified account rejected (active sub + rejected docs — before stepToComplete)
- * 3. Documents (stepToComplete, missing uploads)
- * 4. Verified account submitted / other
+ * Post-login route order. The account must be *complete* before the driver is ever shown
+ * the subscription screen, so documents come first:
+ *
+ * 1. No profile yet (`isOnboarded === false`) → /signup
+ * 2. Rejected documents → /verified-account (rejected summary, with Resubmit)
+ * 3. API `stepToComplete` → that document step
+ * 4. First document still needing upload → that document step
+ * 5. Subscription not active → /subscription
+ * 6. Documents submitted, awaiting review → /verified-account (submitted)
  */
 export const resolvePostLoginRoute = ({
   user,
   stepToComplete,
+  isOnboarded,
   rejectedDocuments = [],
   pendingDocuments = [],
 }) => {
@@ -129,15 +171,16 @@ export const resolvePostLoginRoute = ({
     return { path: '/signup' };
   }
 
-  // 1. Subscription first — no `subscription` or not active → buy before docs/verified
-  if (needsSubscriptionPurchase(user)) {
-    syncCompletedStepsFromUser(user);
-    return { path: '/subscription' };
+  // 1. "Your Details" never completed — no profile exists yet
+  if (!isProfileOnboarded(user, isOnboarded)) {
+    syncCompletedStepsFromUser(user, isOnboarded);
+    return { path: '/signup' };
   }
 
-  // 2. Active subscription + rejected docs → rejected summary (not license-information)
+  syncCompletedStepsFromUser(user, isOnboarded);
+
+  // 2. Rejected docs → the summary screen, which routes into the resubmit flow
   if (hasRejectedDocuments(user, rejectedDocuments)) {
-    syncCompletedStepsFromUser(user);
     return {
       path: '/verified-account',
       state: {
@@ -147,24 +190,27 @@ export const resolvePostLoginRoute = ({
     };
   }
 
-  const step =
-    stepToComplete == null || stepToComplete === ''
-      ? ''
-      : String(stepToComplete).trim();
-
-  // 3a. API step when nothing rejected in payload
-  if (step && DOC_KEY_TO_ROUTE[step]) {
-    return { path: DOC_KEY_TO_ROUTE[step] };
-  }
-
-  // 3b. Missing docs (not rejected/pending review)
+  // 3. First document still needing upload (Enforces UI wizard order)
   const docRoute = getFirstIncompleteDocumentRoute(user);
   if (docRoute) {
     return { path: docRoute };
   }
 
+  // 4. Server-declared next step (fallback)
+  const rawStep = stepToComplete ?? user?.stepToComplete;
+  const step = rawStep == null || rawStep === '' ? '' : String(rawStep).trim();
+
+  if (step && DOC_KEY_TO_ROUTE[step]) {
+    return { path: DOC_KEY_TO_ROUTE[step] };
+  }
+
+  // 5. Every document is in — only now may the driver be asked to pay
+  if (needsSubscriptionPurchase(user)) {
+    return { path: '/subscription' };
+  }
+
+  // 6. Paid, documents submitted and awaiting review
   if (shouldShowVerifiedSubmitted(user, pendingDocs)) {
-    syncCompletedStepsFromUser(user);
     return {
       path: '/verified-account',
       state: { status: 'submitted' },
@@ -172,10 +218,11 @@ export const resolvePostLoginRoute = ({
   }
 
   if (areAllDocumentsApproved(user)) {
-    syncCompletedStepsFromUser(user);
-    return { path: '/subscription' };
+    return { 
+      path: '/verified-account',
+      state: { status: 'approved' }
+    };
   }
 
-  syncCompletedStepsFromUser(user);
   return { path: getFirstIncompleteStep() };
 };
