@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Check, AlertTriangle } from 'lucide-react';
@@ -11,15 +11,12 @@ import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
 import {
   STEPS,
   arePreviousStepsCompleted,
+  getFirstIncompleteStep,
   clearAllSteps,
   isStepCompleted,
   markStepCompleted,
 } from '../../utils/stepValidation';
-import {
-  getFirstIncompleteDocumentRoute,
-  isProfileOnboarded,
-  resolvePostLoginRoute
-} from '../../utils/onboardingRedirect';
+import { hasActiveSubscription } from '../../utils/onboardingRedirect';
 import {
   clearSubscriptionCheckoutSession,
   getPostSubscriptionFlowState,
@@ -33,7 +30,7 @@ const Subscription = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments } = useSelector((state) => state.auth);
+  const { user, stepToComplete } = useSelector((state) => state.auth);
   const authToken = Cookies.get('token');
 
   const formData = location.state?.formData || {};
@@ -50,6 +47,13 @@ const Subscription = () => {
   const [isCanceling, setIsCanceling] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const userRef = useRef(user);
+  const isCheckingStripeReturnRef = useRef(false);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   console.log(subscriptionDetails,"subscriptionDetails")
 
@@ -70,43 +74,84 @@ const Subscription = () => {
     });
   };
 
-  // Returning from Stripe without paying — verify API, stay on subscription or go to verified
-  useEffect(() => {
+  const handleStripeReturn = useCallback(async () => {
+    setPurchasingPlanId(null);
     if (!hasPendingStripeCheckout()) return;
+    if (isCheckingStripeReturnRef.current) return;
+    isCheckingStripeReturnRef.current = true;
 
-    const handleStripeReturn = async () => {
-      const driverId = resolveDriverId(user);
+    try {
+      const currentUser = userRef.current || user;
+      const driverId = resolveDriverId(currentUser);
       const detailsPath = getSubscriptionDetailsPath(driverId);
       if (!detailsPath) {
         clearSubscriptionCheckoutSession();
-        setPurchasingPlanId(null);
         return;
       }
 
-      try {
-        const response = await axios.get(detailsPath, {
-          skipAuthRedirect: true,
-        });
-        const sub = response.data?.data?.subscription;
-        if (sub?.status === 'active') {
-          goToVerifiedAfterSubscription(getPostSubscriptionFlowState() || {});
-          return;
-        }
-      } catch {
-        // not purchased
+      const response = await axios.get(detailsPath, {
+        skipAuthRedirect: true,
+      });
+      const sub = response.data?.data?.subscription;
+      if (sub?.status === 'active') {
+        goToVerifiedAfterSubscription(getPostSubscriptionFlowState() || {});
+        return;
       }
       clearSubscriptionCheckoutSession();
+    } catch {
+      // not purchased or canceled
+      clearSubscriptionCheckoutSession();
+    } finally {
+      isCheckingStripeReturnRef.current = false;
+      setPurchasingPlanId(null);
+    }
+  }, [user, formData, licenseData, vehicleData, insuranceData, vehicleDetails]);
+
+  // Returning from Stripe without paying or restoring from bfcache (Back button in browser / Stripe UI)
+  useEffect(() => {
+    setPurchasingPlanId(null);
+
+    if (hasPendingStripeCheckout()) {
+      handleStripeReturn();
+    }
+
+    // Modern browsers restore the page from bfcache (Back/Forward Cache) on Back navigation
+    const handlePageShow = () => {
+      setPurchasingPlanId(null);
+      if (hasPendingStripeCheckout()) {
+        handleStripeReturn();
+      }
+    };
+
+    const handlePageHide = () => {
       setPurchasingPlanId(null);
     };
 
-    handleStripeReturn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setPurchasingPlanId(null);
+        if (hasPendingStripeCheckout()) {
+          handleStripeReturn();
+        }
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleStripeReturn]);
 
   // ✅ Back button block karne ka useEffect
   useEffect(() => {
     window.history.pushState(null, '', window.location.pathname);
     const handlePopState = () => {
+      setPurchasingPlanId(null);
       window.history.pushState(null, '', window.location.pathname);
     };
     window.addEventListener('popstate', handlePopState);
@@ -134,23 +179,6 @@ const Subscription = () => {
 
     fetchPlans();
   }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    
-    // Re-verify route on every update (e.g. from background polling)
-    const route = resolvePostLoginRoute({
-      user,
-      stepToComplete,
-      isOnboarded,
-      rejectedDocuments,
-      pendingDocuments
-    });
-
-    if (route && route.path && route.path !== '/subscription') {
-      navigate(route.path, { state: route.state, replace: true });
-    }
-  }, [user, stepToComplete, isOnboarded, rejectedDocuments, pendingDocuments, navigate]);
 
   useEffect(() => {
     if (!user && authToken) {
@@ -194,9 +222,27 @@ const Subscription = () => {
       }
     };
 
+    // Subscription-first login: stay here to buy until active (do not send to license-information)
+    if (!hasActiveSubscription(user)) {
+      fetchSubscriptionDetails();
+      return;
+    }
+
+    if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
+      const allDocsApproved =
+        user?.driverLicense?.status === 'approved' &&
+        user?.vehicleRegistration?.status === 'approved' &&
+        user?.insurance?.status === 'approved' &&
+        user?.vehicleDetails?.status === 'approved';
+      if (!allDocsApproved) {
+        navigate(getFirstIncompleteStep());
+        return;
+      }
+    }
+
     fetchSubscriptionDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?._id, authToken, navigate, dispatch]);
+  }, [user, authToken, stepToComplete, navigate, dispatch]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
