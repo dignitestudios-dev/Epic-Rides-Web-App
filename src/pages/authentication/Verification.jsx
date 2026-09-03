@@ -129,6 +129,7 @@ export default function Verification() {
           
           const { path, state } = resolvePostLoginRoute({
             user: userData,
+            isOnboarded: result?.isOnboarded,
             stepToComplete,
             isOnboarded: result?.isOnboarded,
             rejectedDocuments,

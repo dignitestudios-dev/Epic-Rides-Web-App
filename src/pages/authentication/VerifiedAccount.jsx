@@ -15,7 +15,7 @@ import {
   isStepCompleted,
 } from '../../utils/stepValidation';
 import { mergeRejectedDocumentsForResubmit } from '../../utils/rejectedFlowPrefill';
-import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import { hasActiveSubscription, isDocumentRoute } from '../../utils/onboardingRedirect';
 import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
 import { clearRejectedFlowState } from '../../redux/slices/auth.slice';
 import { useAccountStatus } from '../../hooks/useAccountStatus';
@@ -441,6 +441,17 @@ const VerifiedAccount = () => {
       console.log('✅ PRIORITY 1: No user and statusFromState is not rejected, redirecting to /signup');
       navigate('/signup');
       return;
+    }
+
+    // Documents come before payment: if any step is still outstanding, go finish it rather
+    // than falling through to /subscription. This reads local progress, which markStepCompleted
+    // updates immediately after each upload — the redux user is still stale at this point.
+    if (user) {
+      const nextRoute = getFirstIncompleteStep();
+      if (isDocumentRoute(nextRoute)) {
+        navigate(nextRoute, { replace: true });
+        return;
+      }
     }
 
     // Must have active subscription before verified-account (e.g. Stripe cancel/back)

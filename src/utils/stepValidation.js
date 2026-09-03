@@ -43,9 +43,9 @@ export const getCompletedSteps = () => {
 };
 
 /**
- * Replace the stored progress outright.
- * Needed because `markStepCompleted` can only ever add: when server state says a step is
- * *not* done, overwriting is the only way to clear progress that was recorded wrongly.
+ * Replace stored progress outright.
+ * `markStepCompleted` can only add, so it cannot correct progress that was recorded for a
+ * step the server says is still outstanding (e.g. a document that came back rejected).
  */
 export const setCompletedSteps = (steps) => {
   localStorage.setItem('completedSteps', JSON.stringify(Array.isArray(steps) ? steps : []));

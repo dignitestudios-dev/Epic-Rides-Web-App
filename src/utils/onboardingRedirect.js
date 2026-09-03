@@ -15,12 +15,7 @@ const DOC_KEY_TO_ROUTE = {
 };
 
 /** Document key → the wizard step that uploads it, in wizard order. */
-const DOC_KEY_TO_STEP = [
-  ['driverLicense', STEPS.LICENSE_INFORMATION],
-  ['vehicleRegistration', STEPS.VEHICLE_DETAILS],
-  ['insurance', STEPS.INSURANCE_INFORMATION],
-  ['vehicleDetails', STEPS.ADD_VEHICLE_DETAILS],
-];
+
 
 /**
  * `isOnboarded === false` means the "Your Details" step never completed, so there is no
@@ -81,20 +76,31 @@ export const shouldRedirectToSubscription = (user, pendingDocuments = []) => {
   return areAllDocumentsPendingReview(user, pendingDocuments);
 };
 
-/**
- * Local step progress, derived from what the server actually says is done.
- * Stops at the first step that still needs the user, so the stored array stays a true
- * prefix of the wizard — which is what `arePreviousStepsCompleted` assumes.
- */
-export const computeCompletedStepsFromUser = (user, isOnboarded) => {
-  if (!user || !isProfileOnboarded(user, isOnboarded)) return [];
+/** Document key → the wizard step that uploads it, in wizard order. */
+const DOC_KEY_TO_STEP = [
+  ['driverLicense', STEPS.LICENSE_INFORMATION],
+  ['vehicleRegistration', STEPS.VEHICLE_DETAILS],
+  ['insurance', STEPS.INSURANCE_INFORMATION],
+  ['vehicleDetails', STEPS.ADD_VEHICLE_DETAILS],
+];
+
+/** True for the four document steps — used to decide how much state to forward. */
+export const isDocumentRoute = (route) =>
+  Object.values(DOC_KEY_TO_ROUTE).includes(route);
+
+/** Local step progress derived from server truth, one document at a time. */
+export const computeCompletedStepsFromUser = (user) => {
+  if (!user) return [];
 
   const steps = [STEPS.SIGNUP];
 
-  for (const [key, step] of DOC_KEY_TO_STEP) {
-    if (documentNeedsUserAction(user[key])) return steps;
-    steps.push(step);
-  }
+  // A step counts as done only when its document no longer needs the driver.
+  // A rejected document is NOT done, even if later documents already are.
+  DOC_KEY_TO_STEP.forEach(([key, step]) => {
+    if (!documentNeedsUserAction(user[key])) {
+      steps.push(step);
+    }
+  });
 
   if (hasActiveSubscription(user)) {
     steps.push(STEPS.SUBSCRIPTION);
@@ -102,6 +108,15 @@ export const computeCompletedStepsFromUser = (user, isOnboarded) => {
 
   return steps;
 };
+
+/**
+ * Overwrite local progress with server truth.
+ *
+ * This *replaces* rather than adds. The previous version marked all four document steps
+ * complete for any user, so logging in with a rejected document left every step flagged done
+ * — and the next page bounced straight to /subscription with documents still outstanding.
+ */
+
 
 /**
  * Overwrite local progress with server truth.
@@ -157,6 +172,7 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
  */
 export const resolvePostLoginRoute = ({
   user,
+  isOnboarded,
   stepToComplete,
   isOnboarded,
   rejectedDocuments = [],
@@ -167,19 +183,14 @@ export const resolvePostLoginRoute = ({
       ? pendingDocuments
       : user?.pendingDocuments ?? [];
 
-  if (!user) {
+  if (!user || isOnboarded === false) {
     return { path: '/signup' };
   }
 
-  // 1. "Your Details" never completed — no profile exists yet
-  if (!isProfileOnboarded(user, isOnboarded)) {
-    syncCompletedStepsFromUser(user, isOnboarded);
-    return { path: '/signup' };
-  }
+  // Align local progress with server truth on every login, whichever branch is taken below
+  syncCompletedStepsFromUser(user);
 
-  syncCompletedStepsFromUser(user, isOnboarded);
-
-  // 2. Rejected docs → the summary screen, which routes into the resubmit flow
+  // 1. Active subscription + rejected docs → rejected summary
   if (hasRejectedDocuments(user, rejectedDocuments)) {
     return {
       path: '/verified-account',
@@ -217,11 +228,9 @@ export const resolvePostLoginRoute = ({
     };
   }
 
-  if (areAllDocumentsApproved(user)) {
-    return { 
-      path: '/verified-account',
-      state: { status: 'approved' }
-    };
+  if (areAllDocumentsApproved(user) && !hasActiveSubscription(user)) {
+    syncCompletedStepsFromUser(user);
+    return { path: '/subscription' };
   }
 
   return { path: getFirstIncompleteStep() };

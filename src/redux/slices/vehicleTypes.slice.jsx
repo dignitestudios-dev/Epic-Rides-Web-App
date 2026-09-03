@@ -34,11 +34,7 @@ export const getVehicleTypes = createAsyncThunk(
               ? rawModel.charAt(0).toUpperCase() + rawModel.slice(1)
               : rawType.charAt(0).toUpperCase() + rawType.slice(1),
             value: uniqueId,
-            // The documents endpoint expects the model ("sedan"/"suv"/"hatchback"),
-            // not the rideType ("economy"/"luxury"). Fall back only if model is missing.
-            apiValue: lowerModel || lowerType,
-            model: lowerModel,
-            rideType: lowerType,
+            apiValue: rawModel || lowerType,
           };
         });
 
