@@ -172,7 +172,7 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
  */
 export const resolvePostLoginRoute = ({
   user,
-  isOnboarded,
+  // isOnboarded,
   stepToComplete,
   isOnboarded,
   rejectedDocuments = [],

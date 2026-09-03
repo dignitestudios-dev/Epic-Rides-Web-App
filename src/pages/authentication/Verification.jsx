@@ -131,7 +131,6 @@ export default function Verification() {
             user: userData,
             isOnboarded: result?.isOnboarded,
             stepToComplete,
-            isOnboarded: result?.isOnboarded,
             rejectedDocuments,
             pendingDocuments,
           });
