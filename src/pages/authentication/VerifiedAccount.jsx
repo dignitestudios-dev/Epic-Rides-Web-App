@@ -7,6 +7,7 @@ import axios from '../../axios';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import {
   STEPS,
   arePreviousStepsCompleted,
@@ -532,6 +533,9 @@ const VerifiedAccount = () => {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Top Right Logout Button */}
+      <TopRightLogoutButton onClick={handleLogout} />
+
       {/* Background */}
       <SignupBackground />
 
@@ -564,16 +568,6 @@ const VerifiedAccount = () => {
               <p className="font-poppins font-normal text-base text-center text-white m-0 px-4 max-w-md">
                 Your profile is under review. You will receive an email once your profile has been approved.
               </p>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-[26em] py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#113D00] text-white hover:bg-[#016606]"
-              >
-                Logout
-              </button>
-
-
             </div>
           )}
 
@@ -594,14 +588,6 @@ const VerifiedAccount = () => {
               <p className="font-poppins font-normal text-base text-center text-[#E6E6E6] m-0 px-4 max-w-md">
                 Your profile is approved. You can log in to the driver app when ready.
               </p>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#113D00] text-white hover:bg-[#016606]"
-              >
-                Logout
-              </button>
             </div>
           )}
 
@@ -627,23 +613,16 @@ const VerifiedAccount = () => {
               </div>
 
               {/* Buttons */}
-              <div className="flex flex-col gap-3 mt-4" style={{ width: '360px' }}>
-                {shouldShowResubmitButton && (
+              {shouldShowResubmitButton && (
+                <div className="flex flex-col gap-3 mt-4" style={{ width: '360px' }}>
                   <button
                     onClick={handleResubmit}
                     className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-white hover:bg-[#55b307]"
                   >
                     resubmit
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#113D00] text-white hover:bg-[#016606]"
-                >
-                  Logout
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>

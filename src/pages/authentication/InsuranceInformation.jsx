@@ -8,6 +8,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { bartwo } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
 import { isDocumentRoute } from '../../utils/onboardingRedirect';
@@ -314,6 +315,9 @@ const InsuranceInformation = () => {
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
+      {/* Top Right Logout Button */}
+      <TopRightLogoutButton onClick={handleLogout} />
+
       {/* Background */}
       <SignupBackground />
 
@@ -517,16 +521,6 @@ const InsuranceInformation = () => {
               >
                 {isLoading ? 'Uploading...' : 'Next'}
               </button>
-              <div className="flex gap-3">
-               
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex-1 py-2.5 rounded-lg font-poppins font-semibold text-xs md:text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#016606] text-white hover:bg-[#016606]"
-                >
-                  Logout
-                </button>
-              </div>
             </div>
           </div>
         </div>

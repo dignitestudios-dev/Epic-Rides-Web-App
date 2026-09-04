@@ -8,6 +8,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, clearAllSteps, isStepCompleted, getFirstIncompleteStep } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
 import { isDocumentRoute } from '../../utils/onboardingRedirect';
@@ -527,6 +528,9 @@ const LicenseInformation = () => {
   return (
     // <div className="relative w-full h-screen bg-black overflow-hidden">
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
+      {/* Top Right Logout Button */}
+      <TopRightLogoutButton onClick={handleLogout} />
+
       {/* Background */}
       <SignupBackground />
 
@@ -879,22 +883,6 @@ const LicenseInformation = () => {
                 }}
               >
                 {isLoading ? 'Uploading...' : 'Next'}
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full py-2.5 rounded-lg font-semibold transition-colors duration-200"
-                style={{
-                  background: '#113D00',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontFamily: 'Poppins',
-                  fontWeight: 600,
-                  textTransform: 'capitalize',
-                  cursor: 'pointer'
-                }}
-              >
-                Logout
               </button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import axios from '../../axios';
 import { ErrorToast, SuccessToast } from '../../components/global/Toaster';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
 import {
   STEPS,
@@ -334,6 +335,9 @@ const Subscription = () => {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Top Right Logout Button */}
+      <TopRightLogoutButton onClick={handleLogout} />
+
       {/* Background */}
       <SignupBackground />
 
@@ -475,13 +479,6 @@ const Subscription = () => {
               </div>
             )
           ) : null}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-[27.3em] py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#113D00] text-white hover:bg-[#016606]"
-          >
-            Logout
-          </button>
         </div>
 
 

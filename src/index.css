@@ -5,10 +5,11 @@
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
-}   
+}
 
 /* Fix for macOS/iOS where misspelled words inside inputs revert to black text */
-input, textarea {
+input,
+textarea {
   -webkit-text-fill-color: currentcolor;
 }
 
@@ -29,8 +30,6 @@ select:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff !important;
 }
-  
-
 
 /* Inside your global CSS file */
 @layer components {
@@ -43,7 +42,7 @@ select:-webkit-autofill:active {
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #61CB08; /* scrollbar color */
+    background-color: #61cb08; /* scrollbar color */
     border-radius: 10px; /* rounded corners */
   }
 

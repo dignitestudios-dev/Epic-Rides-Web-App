@@ -9,6 +9,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { barthree, Hash, sedan, SUV } from '../../assets/export';
 import { GoAlertFill } from "react-icons/go";
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
@@ -509,6 +510,9 @@ const AddVehicleDetails = () => {
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
+      {/* Top Right Logout Button */}
+      <TopRightLogoutButton onClick={handleLogout} />
+
       {/* Background */}
       <SignupBackground />
 
@@ -868,13 +872,6 @@ const AddVehicleDetails = () => {
               }}
             >
               {isLoading ? 'Submitting...' : 'Next'}
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#113D00] text-white hover:bg-[#016606]"
-            >
-              Logout
             </button>
           </div>
         </div>
