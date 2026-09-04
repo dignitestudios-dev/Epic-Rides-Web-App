@@ -292,11 +292,12 @@ const SignupPage = () => {
     }
   }, [referredByFromQuery]);
 
-  // Auto-fill phone number from Redux state on component mount
+  // Auto-fill phone number on component mount from Redux, user profile, or verifiedPhone in localStorage
   React.useEffect(() => {
-    if (phone) {
-      // Get raw phone number (digits only) from Redux state
-      const rawPhone = phone.replace(/\D/g, '');
+    const p = phone || user?.phone || localStorage.getItem('verifiedPhone');
+    if (p) {
+      // Get raw phone number (digits only)
+      const rawPhone = String(p).replace(/\D/g, '');
       const localPhone = rawPhone.length === 11 && rawPhone.startsWith('1')
         ? rawPhone.slice(1)
         : rawPhone;
@@ -307,7 +308,7 @@ const SignupPage = () => {
         phone: formatted
       }));
     }
-  }, [phone]);
+  }, [phone, user?.phone]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);

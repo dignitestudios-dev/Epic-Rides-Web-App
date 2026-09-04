@@ -47,13 +47,20 @@ const AddVehicleDetails = () => {
   const vehicleData = location.state?.vehicleData || {};
   const insuranceData = location.state?.insuranceData || {};
 
-  // Get today's date in YYYY-MM-DD format for min date
-  const getTodayDate = () => {
+  // Get minimum expiry date (at least 1 month in the future from today) in YYYY-MM-DD format
+  const getMinExpiryDate = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const targetYear = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+    const targetMonth = (today.getMonth() + 1) % 12;
+    const targetDay = today.getDate();
+    const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const day = Math.min(targetDay, lastDayOfTargetMonth);
+
+    const minDate = new Date(targetYear, targetMonth, day);
+    const yyyy = minDate.getFullYear();
+    const mm = String(minDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(minDate.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   };
 
   // Get max date — 10 years from today
@@ -144,6 +151,36 @@ const AddVehicleDetails = () => {
       return;
     }
 
+    // Immediate validation for registration expiry date
+    if (name === 'registrationExpiryDate') {
+      setVehicleDetails((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+      if (value) {
+        const minExpiry = getMinExpiryDate();
+        const maxExpiry = getMaxDate();
+        if (value < minExpiry) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            registrationExpiryDate: 'Expiry date must be at least 1 month in the future',
+          }));
+        } else if (value > maxExpiry) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            registrationExpiryDate: 'Expiry date cannot be more than 10 years from today',
+          }));
+        } else {
+          setFieldErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors.registrationExpiryDate;
+            return newErrors;
+          });
+        }
+      }
+      return;
+    }
+
     // Default handler
     setVehicleDetails((prev) => ({
       ...prev,
@@ -219,15 +256,14 @@ const AddVehicleDetails = () => {
       }
     }
 
-    // Validate registration expiry date — must not exceed 10 years from today
+    // Validate registration expiry date — must be at least 1 month in the future and not exceed 10 years from today
     if (vehicleDetails.registrationExpiryDate) {
-      const selectedDate = new Date(vehicleDetails.registrationExpiryDate);
-      const maxDate = new Date(getMaxDate());
-      const todayDate = new Date(getTodayDate());
+      const minExpiry = getMinExpiryDate();
+      const maxExpiry = getMaxDate();
 
-      if (selectedDate < todayDate) {
-        errors.registrationExpiryDate = `Expiry date cannot be in the past`;
-      } else if (selectedDate > maxDate) {
+      if (vehicleDetails.registrationExpiryDate < minExpiry) {
+        errors.registrationExpiryDate = `Expiry date must be at least 1 month in the future`;
+      } else if (vehicleDetails.registrationExpiryDate > maxExpiry) {
         errors.registrationExpiryDate = `Expiry date cannot be more than 10 years from today`;
       }
     }
@@ -715,7 +751,7 @@ const AddVehicleDetails = () => {
                   name="registrationExpiryDate"
                   value={vehicleDetails.registrationExpiryDate}
                   onChange={handleInputChange}
-                  min={getTodayDate()}
+                  min={getMinExpiryDate()}
                   max={getMaxDate()}
                   placeholder="Enter Expiry Date"
                   className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"

@@ -24,13 +24,20 @@ const LicenseInformation = () => {
 
   console.log(user, "d")
 
-  // Get today's date in YYYY-MM-DD format for min date
-  const getTodayDate = () => {
+  // Get minimum expiry date (at least 1 month in the future from today) in YYYY-MM-DD format
+  const getMinExpiryDate = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const targetYear = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+    const targetMonth = (today.getMonth() + 1) % 12;
+    const targetDay = today.getDate();
+    const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const day = Math.min(targetDay, lastDayOfTargetMonth);
+
+    const minDate = new Date(targetYear, targetMonth, day);
+    const yyyy = minDate.getFullYear();
+    const mm = String(minDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(minDate.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   };
 
   const [licenseData, setLicenseData] = useState({
@@ -65,11 +72,9 @@ const LicenseInformation = () => {
       if (!value) {
         error = 'This field is required';
       } else {
-        const selectedDate = new Date(value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (selectedDate < today) {
-          error = 'Expiry date must be in the future';
+        const minExpiry = getMinExpiryDate();
+        if (value < minExpiry) {
+          error = 'Expiry date must be at least 1 month in the future';
         }
       }
     }
@@ -758,7 +763,7 @@ const LicenseInformation = () => {
                 name="expiryDate"
                 value={licenseData.expiryDate}
                 onChange={handleLicenseInputChange}
-                min={getTodayDate()}
+                min={getMinExpiryDate()}
                 placeholder="Enter your date"
                 className="w-full px-3 py-2.5 rounded-lg outline-none placeholder:text-[#808080]"
                 style={{

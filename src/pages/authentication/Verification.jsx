@@ -7,7 +7,7 @@ import { SuccessToast } from '../../components/global/Toaster';
 import NumberVerifiedModal from '../../components/global/NumberVerifiedModal';
 import Cookies from 'js-cookie';
 import { resolvePostLoginRoute } from '../../utils/onboardingRedirect';
-import { ChevronLeft } from 'lucide-react';
+import { getFirstIncompleteStep } from '../../utils/stepValidation';
 import { IoChevronBackCircleSharp } from "react-icons/io5";
 
 
@@ -15,9 +15,9 @@ export default function Verification() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { isLoading, phone } = useSelector((state) => state.auth);
+  const { isLoading, phone, user: reduxUser, otpSent } = useSelector((state) => state.auth);
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 digits OTP
-  const [resendTimer, setResendTimer] = useState(60); // Start with 10 seconds
+  const [resendTimer, setResendTimer] = useState(60); // Start with 60 seconds
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const otpInputRefs = useRef([]);
 
@@ -29,8 +29,21 @@ export default function Verification() {
     }
   }, [location.search]);
 
-  // Get phone number from Redux state or location state
-  const phoneNumber = phone || location.state?.phoneNumber || '';
+  const token = Cookies.get('token');
+  let currentUser = reduxUser;
+  if (!currentUser) {
+    try {
+      const raw = Cookies.get('user');
+      if (raw) currentUser = JSON.parse(raw);
+    } catch {
+      // ignore invalid cookie JSON
+    }
+  }
+  const isLoggedIn = Boolean(token && (currentUser || reduxUser));
+
+  // Only allow when coming from login page via "Continue" button
+  const fromLogin = Boolean(location.state?.fromLogin);
+  const phoneNumber = location.state?.phoneNumber || phone || '';
   
   // Get masked phone number for display
   const getMaskedPhoneNumber = () => {
@@ -188,12 +201,30 @@ export default function Verification() {
     }
   }, []);
 
-  // Redirect to login if no phone number
+  // Auth / Navigation Guard Effect:
+  // 1. If logged in, redirect to active onboarding step / dashboard
+  // 2. If not logged in and not arriving via "Continue with Phone Number", redirect to /
   useEffect(() => {
-    if (!phoneNumber) {
-      navigate('/');
+    if (isLoggedIn) {
+      if (currentUser) {
+        const { path, state: postLoginState } = resolvePostLoginRoute({
+          user: currentUser,
+          isOnboarded: currentUser?.isOnboarded,
+          stepToComplete: currentUser?.stepToComplete,
+          rejectedDocuments: currentUser?.rejectedDocuments,
+          pendingDocuments: currentUser?.pendingDocuments,
+        });
+        navigate(path, { replace: true, state: postLoginState });
+      } else {
+        navigate(getFirstIncompleteStep(), { replace: true });
+      }
+      return;
     }
-  }, [phoneNumber, navigate]);
+
+    if (!phoneNumber || !fromLogin) {
+      navigate('/', { replace: true });
+    }
+  }, [isLoggedIn, currentUser, phoneNumber, fromLogin, navigate]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -211,6 +242,11 @@ export default function Verification() {
       return () => clearInterval(timer);
     }
   }, [resendTimer]);
+
+  // Prevent flash of content if user shouldn't be here
+  if (isLoggedIn || !phoneNumber || !fromLogin) {
+    return null;
+  }
 
   return (
     <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-white font-poppins">
@@ -317,7 +353,7 @@ export default function Verification() {
 
             {/* Didn't receive code? Resend now */}
             <p className="w-full md:w-[456px] max-w-full font-inter font-normal text-xs md:text-sm leading-[121%] text-center text-[#808080] m-0 px-4">
-              Didn't receive code?{' '}
+              Didn&apos;t receive a code?{' '}
               <button
                 type="button"
                 onClick={handleResend}

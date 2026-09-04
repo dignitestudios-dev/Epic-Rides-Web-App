@@ -8,7 +8,6 @@ import Cookies from 'js-cookie';
 
 export default function EpicRidesLogin() {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [countryCode] = useState('+1');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,7 +65,9 @@ export default function EpicRidesLogin() {
         // If OTP sent successfully, store phone in Redux and navigate to verification
         if (result?.phone) {
           dispatch(setPhone(phoneWithCountryCode));
-          navigate('/verification', { state: { phoneNumber: phoneWithCountryCode } });
+          navigate('/verification', {
+            state: { phoneNumber: phoneWithCountryCode, fromLogin: true },
+          });
         }
       } catch (error) {
         // Error is already handled in the slice with ErrorToast
@@ -207,7 +208,7 @@ export default function EpicRidesLogin() {
               <span
                 className="font-poppins font-semibold text-xs sm:text-sm lg:text-sm leading-[120%] text-center capitalize text-[#000B00] whitespace-nowrap px-2 lg:px-0 lg:absolute lg:w-[211px] lg:h-[17px] lg:left-[calc(50%-105.5px+1px)] lg:top-[calc(50%-8.5px)]"
               >
-                {isLoading ? 'Processing...' : 'Continue with Phone Number'}
+                {isLoading ? 'Processing...' : 'Continue'}
               </span>
             </button>
           </form>
