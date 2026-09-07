@@ -54,7 +54,7 @@ export const verifyOtp = createAsyncThunk(
   "auth/verifyOtp",
   async ({ phone, otp, role = "driver" }, thunkAPI) => {
     try {
-      const res = await axios.post("/api/auth/verify-otp", {
+      const res = await axios.post("/api/auth/verify-otp-web", {
         phone: phone,
         otp: otp,
         role: role,
