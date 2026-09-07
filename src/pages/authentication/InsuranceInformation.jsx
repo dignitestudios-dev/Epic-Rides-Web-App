@@ -326,7 +326,7 @@ const InsuranceInformation = () => {
       <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end custom-scrollbar">
         <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
           <div className="w-full max-w-md my-auto flex flex-col items-center">
             {/* Header */}

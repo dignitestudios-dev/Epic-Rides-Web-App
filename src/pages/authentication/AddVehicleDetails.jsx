@@ -523,7 +523,7 @@ const AddVehicleDetails = () => {
       <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end custom-scrollbar">
         <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-12">
           <div className="w-full max-w-[760px] my-auto flex flex-col items-center">
             {/* Header */}
@@ -919,20 +919,6 @@ const AddVehicleDetails = () => {
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleConfirmLogout}
       />
-      <style>
-        {`
-          .vehicle-type-scroll::-webkit-scrollbar {
-            height: 6px;
-          }
-          .vehicle-type-scroll::-webkit-scrollbar-thumb {
-            background: #61CB08;
-            border-radius: 999px;
-          }
-          .vehicle-type-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-        `}
-      </style>
     </div>
   );
 };

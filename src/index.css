@@ -31,23 +31,56 @@ select:-webkit-autofill:active {
   caret-color: #ffffff !important;
 }
 
-/* Inside your global CSS file */
-@layer components {
+/* Custom Scrollbar - Global styling for all scrollable containers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #61cb08 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #61cb08;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #4a9a06;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #61cb08 transparent;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px; /* width of the scrollbar */
+    width: 8px;
+    height: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent; /* track background */
+    background: transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #61cb08; /* scrollbar color */
-    border-radius: 10px; /* rounded corners */
+    background-color: #61cb08;
+    border-radius: 10px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: #4a9a06; /* slightly darker shade on hover */
+    background-color: #4a9a06;
   }
 }
 

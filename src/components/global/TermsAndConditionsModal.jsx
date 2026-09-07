@@ -44,7 +44,7 @@ const TermsAndConditionsModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <div className="text-white font-poppins font-normal text-sm leading-relaxed space-y-4">
             <div>
               <h3 className="font-semibold text-base mb-2">1. Acceptance of Terms</h3>

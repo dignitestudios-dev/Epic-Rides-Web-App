@@ -76,7 +76,7 @@ export default function EpicRidesLogin() {
     }
   };
   return (
-    <div className="relative w-full min-h-screen overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start bg-black font-poppins py-8 px-4 sm:px-6 md:px-8">
+    <div className="relative w-full min-h-screen overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start bg-black font-poppins py-8 px-4 sm:px-6 md:px-8 custom-scrollbar">
       {/* Background Image */}
       <div 
         className="fixed inset-0 w-full h-full bg-cover bg-center pointer-events-none"

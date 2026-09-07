@@ -544,7 +544,7 @@ const VerifiedAccount = () => {
       <SignupSidebar currentStep={5} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end custom-scrollbar">
         <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
           <div className="w-full max-w-lg my-auto flex flex-col items-center">
             {/* Request Submitted State */}
@@ -628,8 +628,8 @@ const VerifiedAccount = () => {
             </div>
           )}
 
-          {/* Prominent Log Out button below content */}
-          <div className="flex flex-col gap-3 mt-4 w-full max-w-[360px]">
+          {/* Prominent Log Out button below content (Mobile only) */}
+          <div className="flex flex-col gap-3 mt-4 w-full max-w-[360px] lg:hidden">
             <LogoutButton onClick={handleLogout} />
           </div>
         </div>

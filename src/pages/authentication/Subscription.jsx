@@ -343,7 +343,7 @@ const Subscription = () => {
       <SignupBackground />
 
       {/* Main Content */}
-      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-start">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-start custom-scrollbar">
         <div className="w-full min-h-full flex flex-col items-center justify-start pt-16 sm:pt-20 lg:pt-14 pb-16 px-4 sm:px-8 max-w-[1200px]">
           <div className="w-full my-auto flex flex-col items-center gap-6 md:gap-8">
             {/* Header */}
@@ -478,20 +478,20 @@ const Subscription = () => {
                   })}
                 </div>
 
-                {/* Logout Button below Plans */}
-                <div className="w-full max-w-[27em] flex justify-center">
+                {/* Logout Button below Plans (Mobile only) */}
+                <div className="w-full max-w-[27em] flex justify-center lg:hidden">
                   <LogoutButton onClick={handleLogout} className="!rounded-xl" />
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-[27em]">
+              <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-[27em] lg:hidden">
                 <p className="font-poppins font-normal text-base text-white">No plans available</p>
                 <LogoutButton onClick={handleLogout} className="!rounded-xl" />
               </div>
             )
           ) : (
-            /* Logout Button when subscription is active, below cancel button */
-            <div className="w-full max-w-[27em] flex justify-center mt-2">
+            /* Logout Button when subscription is active, below cancel button (Mobile only) */
+            <div className="w-full max-w-[27em] flex justify-center mt-2 lg:hidden">
               <LogoutButton onClick={handleLogout} className="!rounded-xl" />
             </div>
           )}
