@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadVehicleDetails } from '../../redux/slices/auth.slice';
 import { getVehicleTypes } from '../../redux/slices/vehicleTypes.slice';
-import { Info, Check, TriangleAlertIcon, Calendar } from 'lucide-react';
+import { Info, Check, TriangleAlertIcon } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
@@ -700,34 +700,22 @@ const AddVehicleDetails = () => {
                   <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
                     Registration Expiry Date
                   </label>
-                  <div className="relative w-full flex items-center">
-                    <input
-                      type="date"
-                      name="registrationExpiryDate"
-                      value={vehicleDetails.registrationExpiryDate}
-                      onChange={handleInputChange}
-                      min={getMinExpiryDate()}
-                      max={getMaxDate()}
-                      placeholder="Enter Expiry Date"
-                      onClick={(e) => {
-                        try {
-                          if (e.target.showPicker) {
-                            e.target.showPicker();
-                          }
-                        } catch (_) {}
-                      }}
-                      className="w-full px-3 md:px-4 pr-10 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                        backdropFilter: 'blur(42px)',
-                        border: fieldErrors.registrationExpiryDate ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                        color: '#FFFFFF'
-                      }}
-                    />
-                    <div className="absolute right-3 md:right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/80 flex items-center justify-center">
-                      <Calendar size={18} />
-                    </div>
-                  </div>
+                  <input
+                    type="date"
+                    name="registrationExpiryDate"
+                    value={vehicleDetails.registrationExpiryDate}
+                    onChange={handleInputChange}
+                    min={getMinExpiryDate()}
+                    max={getMaxDate()}
+                    placeholder="Enter Expiry Date"
+                    className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                      backdropFilter: 'blur(42px)',
+                      border: fieldErrors.registrationExpiryDate ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                      color: '#FFFFFF'
+                    }}
+                  />
                   {fieldErrors.registrationExpiryDate && (
                     <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
                       {fieldErrors.registrationExpiryDate}
