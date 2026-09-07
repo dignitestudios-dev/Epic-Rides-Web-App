@@ -34,6 +34,8 @@ export const getVehicleTypes = createAsyncThunk(
               : rawType.charAt(0).toUpperCase() + rawType.slice(1),
             value: uniqueId,
             apiValue: rawModel || lowerType,
+            model: item.model || '',
+            rideType: rawType,
           };
         });
 

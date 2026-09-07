@@ -1,201 +1,279 @@
 # Epic Rides Web Application — Comprehensive Codebase & Architecture Guide
 
+---
+
 ## 1. Executive Summary & Core Mission
 
-**Epic Rides Web App** is a driver-facing and passenger-tracking web portal for the Epic Rides ride-hailing and carpooling platform. The web application serves two distinct, decoupled production surfaces:
+**Epic Rides Web App** is the web companion for the Epic Rides ride-hailing and carpooling platform. The web application serves two completely decoupled production surfaces:
 
 1. **Driver Onboarding & Verification Wizard (`/`, `/signup`, `/license-information`, ... `/verified-account`)**
-   - End-to-end registration flow for new drivers.
-   - Phone-based One-Time Password (OTP) authentication.
-   - Multi-step document submission wizard (License, Registration, Insurance, Vehicle Details).
-   - Real-time Florida-restricted location autofill via Google Places.
-   - Automated routing based on server-verified document approval/rejection states.
-   - Stripe Subscription Checkout integration for recurring driver platform memberships.
-   - Real-time status polling for administrative account verification.
+   - End-to-end registration and document upload pipeline for prospective drivers.
+   - Phone-based SMS One-Time Password (OTP) authentication.
+   - Multi-step document submission wizard (Personal Profile, Driver's License, Vehicle Registration, Auto Insurance, Vehicle Specifications).
+   - Strict Florida address restriction enforced via Google Places Autocomplete and geographic coordinate bounding boxes.
+   - Dynamic routing engine driven by server-truth document verification and subscription status.
+   - Stripe Hosted Checkout integration for recurring driver platform memberships.
+   - Real-time status polling for administrative account verification and rejected document resubmission with remote S3 asset pre-filling.
 
 2. **Public Live Ride & Carpool Tracking (`/share`)**
-   - Zero-authentication, public-facing live GPS tracking portal opened via shared URLs.
+   - Zero-authentication, public-facing live GPS tracking portal accessed via shared deep links.
    - Real-time, bi-directional WebSocket telemetry via Socket.IO.
-   - High-precision Google Maps rendering featuring dynamic camera tracking, route polylines, and rotated vehicle markers.
-   - Specialized dispatch logic separating single-passenger rides and multi-passenger carpool journeys.
+   - High-precision Google Maps rendering featuring dynamic camera tracking, route polylines, and rotated vehicle markers with heading interpolation.
+   - Dual-mode dispatcher supporting single-passenger journeys (`RideTracking.jsx`) and multi-passenger carpool trips (`CarpoolShare.jsx`).
    - Terminal state resolution handling (`/ride-ended`, `/ride-cancelled`, `/ride-not-found`).
 
+> **Important architectural note on template remnants**:
+> Directories `src/pages/app`, `src/layouts`, `src/components/layout`, `src/context`, `src/firebase`, `src/hooks/api`, `src/init`, `src/schema`, and `src/static` are inherited from a legacy starter template (`DummyHome`, `DummyLogin`, `DummySidebaar`, commented-out FCM wiring). They are **not active** in production and should not be confused with live application architecture.
+
 ---
 
-## 2. Technology Stack & Dependencies
+## 2. Technology Stack & Key Dependencies
 
-### Core Frameworks & Runtime
-- **React**: `v19.2.4` (Modern concurrent React with functional components and hooks).
-- **Vite**: `v6.1.1` (Fast ESM build tool and development server).
-- **React Router**: `v7.2.0` (Imported from `"react-router"` for declarative routing).
+### Core Framework & Build Tooling
+| Package | Version | Purpose |
+|---|---|---|
+| `react` | `19.2.4` | Core UI library (concurrent features, hooks) |
+| `react-dom` | `19.2.4` | DOM renderer for React |
+| `vite` | `6.1.1` | Build system, HMR dev server, Rollup bundler |
+| `react-router` | `7.2.0` | Client-side declarative routing (imported as `"react-router"`) |
 
 ### State Management & Persistence
-- **Redux Toolkit**: `v2.11.2` (`createSlice`, `createAsyncThunk`, `configureStore`).
-- **React-Redux**: `v9.2.0` (`useDispatch`, `useSelector`).
-- **Redux-Persist**: `v6.0.0` (Persists Redux `auth` slice to `localStorage` under key `root`).
-- **js-cookie**: `v3.0.5` (Cross-origin session persistence for JWT `token` and `user` JSON with 7-day expiration).
+| Package | Version | Purpose |
+|---|---|---|
+| `@reduxjs/toolkit` | `2.11.2` | Global application state, async thunks (`createSlice`, `createAsyncThunk`) |
+| `react-redux` | `9.2.0` | React bindings for Redux (`useSelector`, `useDispatch`) |
+| `redux-persist` | `6.0.0` | Persists `auth` slice to `localStorage` under key `persist:root` |
+| `js-cookie` | `3.0.5` | Cross-origin cookie storage for JWT `token` and `user` JSON (7-day expiry) |
 
 ### Networking, Real-Time & Device Intelligence
-- **Axios**: `v1.7.9` (Configured singleton instance with request/response interceptors).
-- **Socket.IO Client**: `v4.8.3` (WebSocket transport for real-time driver GPS telemetry and ride state updates).
-- **FingerprintJS**: `v4.6.0` (`@fingerprintjs/fingerprintjs` for browser visitor identification).
+| Package | Version | Purpose |
+|---|---|---|
+| `axios` | `1.7.9` | Singleton HTTP client with request/response interceptors |
+| `socket.io-client` | `4.8.3` | Real-time WebSocket connection for live telemetry and ride state |
+| `@fingerprintjs/fingerprintjs` | `4.6.0` | Browser visitor identification |
 
 ### Maps & Geolocation
-- **Google Maps JavaScript API**: Loaded imperatively via custom script loader (`loadGoogleMapsPlaces.js`) and direct `AdvancedMarkerElement` / `Map` instantiation.
-- **@react-google-maps/api**: `v2.20.8`.
+| Package | Version | Purpose |
+|---|---|---|
+| Google Maps JavaScript API | Dynamic | Vector map rendering, `AdvancedMarkerElement`, DirectionsService |
+| Google Places API | Dynamic | Places Autocomplete loaded imperatively via `loadGoogleMapsPlaces.js` |
+| `@react-google-maps/api` | `2.20.8` | Declarative Google Maps React components |
 
-### UI, Styling & Modals
-- **Tailwind CSS**: `v3.4.17` with PostCSS and Autoprefixer.
-- **Custom Fonts**: Poppins (primary brand font) and Inter via Google Fonts.
-- **React Hot Toast**: `v2.5.2` (Enforced singleton toast notifications via `Toaster.jsx`).
-- **React Modal**: `v3.16.3` (Accessible dialogs with blurred backdrop overlays).
-- **Icons**: Lucide React (`v0.563.0`), React Icons (`v5.5.0`), Tabler Icons (`v3.30.0`).
+### Styling, Icons & UI Notifications
+| Package | Version | Purpose |
+|---|---|---|
+| `tailwindcss` | `3.4.17` | Utility-first styling framework with PostCSS and Autoprefixer |
+| `react-hot-toast` | `2.5.2` | Enforced singleton toast notifications (`Toaster.jsx`) |
+| `react-modal` | `3.16.3` | Accessible dialogs with blurred backdrop overlays |
+| `lucide-react` | `0.563.0` | Primary vector icon set |
+| `react-icons` | `5.5.0` | Secondary icon set (e.g. Ionicons, Game Icons) |
+| `@tabler/icons-react` | `3.30.0` | Extended icon set |
 
 ---
 
-## 3. Directory Structure & Anatomy
+## 3. Directory Structure & File Map
 
 ```
 Epic-Rides-Web-App/
-├── public/                     # Static assets, favicon
+├── public/                                 # Public static assets & favicon
 ├── src/
-│   ├── assets/                 # SVGs, car illustrations, badges, flags, logos
-│   │   ├── cars/               # Vehicle silhouettes (sedan, SUV, trackingcar, trackcar2)
-│   │   ├── login/              # Login background imagery, US flag asset
-│   │   ├── signup/             # Stepper indicator assets (barone, bartwo, barthree)
-│   │   └── export.js           # Central asset export hub
+│   ├── assets/                             # SVGs, vehicle silhouettes, badges, backgrounds
+│   │   ├── cars/                           # Vehicle artwork (sedan.png, SUV.png, trackingcar.png, trackcar2.svg)
+│   │   ├── login/                          # Login background wallpaper, US flag badge, SVG logo groups
+│   │   ├── signup/                         # Stepper indicator bars (barone.png, bartwo.png, barthree.png)
+│   │   └── export.js                       # Centralized asset export module
 │   ├── components/
-│   │   ├── authentication/     # Onboarding UI: SignupSidebar, SignupBackground
-│   │   ├── global/             # Modal dialogs (Logout, NumberVerified, Card, Legal), Toaster, ImageFileInputs
-│   │   └── layout/             # Template remnants: DummyNavbar, DummySidebaar
-│   ├── lib/                    # Shared utility helpers (processError, processLogin, etc.)
+│   │   ├── authentication/
+│   │   │   ├── SignupBackground.jsx        # Glassmorphic full-screen wrapper with glowing radial gradients
+│   │   │   └── SignupSidebar.jsx           # Responsive 5-step progress indicator (mobile bar + desktop sidebar)
+│   │   ├── global/
+│   │   │   ├── AddCardModal.jsx            # Credit card entry modal
+│   │   │   ├── ImageFileInputs.jsx         # Mobile camera vs file gallery input components
+│   │   │   ├── LogoutModal.jsx             # Confirmation dialog for logging out
+│   │   │   ├── NoInternet.jsx              # Offline screen fallback
+│   │   │   ├── NumberVerifiedModal.jsx     # OTP success animation modal
+│   │   │   ├── PrivacyPolicyModal.jsx      # Embedded privacy policy viewer
+│   │   │   ├── TermsAndConditionsModal.jsx # Embedded terms and conditions viewer
+│   │   │   ├── Toaster.jsx                 # Single-instance toast engine (Success, Error, Warning)
+│   │   │   └── TopRightLogoutButton.jsx    # Standardized fixed header logout button
+│   │   └── layout/                         # [Template Remnant] DummyNavbar.jsx, DummySidebaar.jsx
+│   ├── lib/
+│   │   ├── helpers.js                      # Placeholder helper utilities
+│   │   └── utils.js                        # Error handler (processError) & auth navigation helpers
 │   ├── pages/
-│   │   ├── authentication/     # Core onboarding & auth pages
-│   │   │   ├── Login.jsx                 # Step 0: Phone input
-│   │   │   ├── Verification.jsx          # Step 0b: 6-digit OTP verification & route dispatcher
-│   │   │   ├── Signup.jsx                # Wizard Step 1: Personal profile & Florida address
-│   │   │   ├── LicenseInformation.jsx    # Wizard Step 2: Driver's license front/back & number
-│   │   │   ├── VehicleDetails.jsx        # Wizard Step 3: Vehicle registration document
-│   │   │   ├── InsuranceInformation.jsx  # Wizard Step 4: Auto insurance document front/back
-│   │   │   ├── AddVehicleDetails.jsx     # Wizard Step 5: Vehicle make, model, VIN, plate, year
-│   │   │   ├── Subscription.jsx          # Wizard Step 6: Platform membership plan selection
-│   │   │   ├── Completesetup.jsx         # Stripe return handler & session verifier
-│   │   │   └── VerifiedAccount.jsx       # Wizard Step 7: Account review & rejected resubmit hub
-│   │   ├── tracking/           # Public real-time tracking pages
-│   │   │   ├── ShareTracking.jsx         # Dispatcher: determines ride vs. carpool mode
-│   │   │   ├── RideTracking.jsx          # Dedicated single-passenger live tracking
-│   │   │   ├── CarpoolShare.jsx          # Multi-stop carpool live tracking
-│   │   │   ├── RideEnded.jsx             # Ride completion / cancellation animated celebration
-│   │   │   ├── RideCancelled.jsx         # Standalone ride cancellation notice
-│   │   │   └── RideNotFound.jsx          # 404 / expired ride handler
-│   │   ├── app/                # Template remnant: DummyHome
-│   │   └── NotFound.jsx        # Global 404 handler with animated sci-fi backdrop
+│   │   ├── authentication/                 # Live Driver Onboarding & Verification Flow
+│   │   │   ├── Login.jsx                   # Route /: Phone number entry & SMS OTP request
+│   │   │   ├── Verification.jsx            # Route /verification: 6-digit OTP verification & route dispatcher
+│   │   │   ├── Signup.jsx                  # Route /signup: Profile creation & Florida-restricted address
+│   │   │   ├── LicenseInformation.jsx      # Route /license-information: Driver license upload & metadata
+│   │   │   ├── VehicleDetails.jsx          # Route /vehicle-details: Vehicle registration document upload
+│   │   │   ├── InsuranceInformation.jsx    # Route /insurance-information: Auto insurance policy document upload
+│   │   │   ├── AddVehicleDetails.jsx       # Route /add-vehicle-details: Vehicle specifications & VIN verification
+│   │   │   ├── Subscription.jsx            # Route /subscription: Membership plan selection & Stripe launch
+│   │   │   ├── Completesetup.jsx           # Route /complete-setup: Stripe checkout return & status validator
+│   │   │   └── VerifiedAccount.jsx         # Route /verified-account: Application review & rejected resubmit hub
+│   │   ├── tracking/                       # Public Real-Time GPS Tracking Subsystem
+│   │   │   ├── ShareTracking.jsx           # Route /share: Dispatcher routing to RideTracking vs CarpoolShare
+│   │   │   ├── RideTracking.jsx            # Dedicated single-passenger live tracking map & telemetry
+│   │   │   ├── CarpoolShare.jsx            # Multi-passenger, multi-stop carpool live tracking map
+│   │   │   ├── RideEnded.jsx               # Route /ride-ended: Animated celebratory particle screen
+│   │   │   ├── RideCancelled.jsx           # Route /ride-cancelled: Ride cancellation notification
+│   │   │   └── RideNotFound.jsx            # Route /ride-not-found: 404 / expired link notice
+│   │   ├── app/                            # [Template Remnant] DummyHome.jsx
+│   │   └── NotFound.jsx                    # Route *: Global 404 catch-all screen with sci-fi grid
 │   ├── redux/
 │   │   ├── slices/
-│   │   │   ├── auth.slice.jsx            # All auth thunks, document uploads, and session actions
-│   │   │   └── vehicleTypes.slice.jsx    # Vehicle category list thunk & state
-│   │   └── store.jsx           # Redux configureStore with redux-persist
+│   │   │   ├── auth.slice.jsx              # All onboarding async thunks, token storage & session reducers
+│   │   │   └── vehicleTypes.slice.jsx      # Fetch vehicle types from GET /api/admin/vehicle-types
+│   │   └── store.jsx                       # Redux store with redux-persist configuration
 │   ├── utils/
-│   │   ├── imageFileInput.js             # Mobile camera vs gallery picker helper
-│   │   ├── loadGoogleMapsPlaces.js       # Dynamic script injector for Google Places
-│   │   ├── onboardingRedirect.js         # Server-truth routing engine & document state evaluator
-│   │   ├── rejectedFlowPrefill.js        # Re-fetches rejected documents from S3 for prefilling
-│   │   ├── stepValidation.js             # LocalStorage client stepper guard & route order
-│   │   └── subscriptionCheckout.js       # Stripe session storage & driver ID resolver
-│   ├── App.jsx                 # Master application routing table
-│   ├── axios.js                # Singleton axios instance, baseUrl configuration, interceptors
-│   ├── index.css               # Tailwind directives, custom scrollbars, Google autocomplete styles
-│   └── main.jsx                # React root mount point with Redux Provider and Toaster
-├── CLAUDE.md                   # Quick developer guide for agent interactions
-├── Epic Rides.postman_collection 9.json  # Comprehensive backend API collection
-├── eslint.config.js            # ESLint flat configuration
-├── tailwind.config.js          # Tailwind styling tokens (Poppins, Inter)
-├── vercel.json                 # Vercel SPA rewrite rule
-└── vite.config.js              # Vite build configuration
+│   │   ├── imageFileInput.js               # Native camera/gallery input accept mime-type constants
+│   │   ├── loadGoogleMapsPlaces.js         # Imperative Google Places JavaScript API script loader
+│   │   ├── onboardingRedirect.js           # Server-truth routing logic & document state analysis
+│   │   ├── rejectedFlowPrefill.js          # S3 asset pre-filler converting remote URLs to File objects
+│   │   ├── stepValidation.js               # LocalStorage client-side stepper progress guards
+│   │   └── subscriptionCheckout.js         # SessionStorage Stripe checkout hand-off keys & helpers
+│   ├── App.jsx                             # Top-level route declarations
+│   ├── axios.js                            # Axios singleton, baseUrl switching, request/response interceptors
+│   ├── index.css                           # Tailwind CSS imports, custom scrollbars, Google autocomplete theme
+│   └── main.jsx                            # Application root mount, Redux Provider, ToasterContainer
+├── docs/
+│   └── PROJECT_DOCUMENTATION.md            # This comprehensive architectural reference
+├── CLAUDE.md                               # Operational instructions for AI coding assistants
+├── Epic Rides.postman_collection 9.json    # Full backend API reference
+├── eslint.config.js                        # ESLint flat configuration
+├── tailwind.config.js                      # Tailwind theme extensions (fonts: Poppins, Inter)
+├── vercel.json                             # Vercel SPA client-side routing rewrites
+└── vite.config.js                          # Vite configuration with React plugin
 ```
-
-> **Note on Template Remnants**: Directories `src/pages/app`, `src/layouts`, `src/components/layout`, `src/context`, `src/firebase`, `src/hooks/api`, `src/init`, and `src/schema` are boilerplate artifacts inherited from a base starter kit. They are not active in the production onboarding or tracking flows.
 
 ---
 
-## 4. Network & API Architecture (`src/axios.js`)
+## 4. Network Layer & API Architecture (`src/axios.js`)
 
-### Base URL Environment Management
+### Base URL Configuration
 The API base URL is declared as an exported constant at the top of [src/axios.js](file:///c:/Users/Muhammad%20Kamil%20Raza/Desktop/KamilRaza/Projects/EpicRides/Epic-Rides-Web-App/src/axios.js):
 ```javascript
 // export const baseUrl = "https://api.dev.epicridesapp.com";
 export const baseUrl = "https://api.staging.epicridesapp.com";
 // export const baseUrl = "https://api.epicridesapp.com";
+// export const baseUrl = "https://kv6hzw0r-3001.inc1.devtunnels.ms";
+// export const baseUrl = "https://155e-45-199-187-86.ngrok-free.app";
 ```
-*Notice: The backend endpoint is hardcoded here rather than loaded via `import.meta.env.VITE_...`. Changing environments requires switching the active comment.*
+> [!IMPORTANT]
+> The backend base URL is **hardcoded** in `src/axios.js`. Even though `.env` contains `VITE_API_BASE_URL`, the application does not read `import.meta.env.VITE_API_BASE_URL`. Switching backend environments is done by uncommenting the appropriate line in `src/axios.js`.
 
-### Request Interceptor
-Because the frontend and backend run on different domains, cookies cannot be sent automatically. The request interceptor inspects `Cookies.get("token")` and injects the HTTP `Authorization` header:
+### Request Interceptor & Cross-Origin Auth
+Because the web app and the backend API run on different host domains, browser cookies are not passed automatically. The request interceptor inspects `Cookies.get("token")` and attaches it via HTTP `Authorization: Bearer <token>`:
 ```javascript
-instance.interceptors.request.use((config) => {
-  const token = Cookies.get("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+instance.interceptors.request.use(
+  (config) => {
+    const token = Cookies.get("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 ```
 
-### Response Interceptor & 401 Session Handling
-1. **Network & Timeout Errors**: Catches `ECONNABORTED`, `ETIMEDOUT`, or offline events (`!navigator.onLine`) and triggers single-instance notifications via `ErrorToast`.
+### Response Interceptor & 401 Session Shield
+1. **Network Offline / Timeout Interception**:
+   - Catches connection timeouts (`ECONNABORTED`, `ETIMEDOUT`, or messages with "timeout") and displays a standardized single-instance `ErrorToast("The request timed out. Please try again.")`.
+   - Checks `navigator.onLine` and notifies user when internet connection is degraded.
 2. **401 Unauthorized Protection**:
-   - An onboarding route whitelist prevents kicking out drivers during registration:
-     `['/signup', '/license-information', '/vehicle-details', '/insurance-information', '/add-vehicle-details', '/subscription', '/verified-account', '/verification', '/complete-setup']`
-   - Alternatively, requests specifying `{ skipAuthRedirect: true }` ignore 401 redirects.
-   - For all other requests, cookies (`token`, `user`) are cleared, and the user is redirected to `/`.
+   - An **onboarding route whitelist** ensures that a 401 during registration or document upload does not prematurely kick out prospective drivers:
+     ```javascript
+     const onboardingPaths = [
+       "/signup",
+       "/license-information",
+       "/vehicle-details",
+       "/insurance-information",
+       "/add-vehicle-details",
+       "/subscription",
+       "/verified-account",
+       "/verification",
+       "/complete-setup",
+     ];
+     ```
+   - If a request specifies `{ skipAuthRedirect: true }`, 401 redirects are skipped.
+   - For all other authenticated calls, a 401 clears `token` and `user` cookies, flashes `"Session expired. Please relogin"`, and performs a hard redirect to `/`.
 
 ---
 
-## 5. State Management & Authentication Flow
+## 5. State Management & Session Architecture
 
 ### Session State Triplication
-Session state is maintained across three separate storage mediums:
-1. **HTTP Cookies (`js-cookie`)**: `token` (JWT string) and `user` (serialized JSON object) with a 7-day TTL. This serves as the source of truth across browser tabs and reloads.
-2. **Redux Persist Store (`src/redux/store.jsx`)**: The `auth` slice is stored in `localStorage` under `persist:root`. Action `hydrateAuthFromCookies` synchronizes Redux with cookies whenever the Redux store is unpopulated.
-3. **Storage Utilities (`sessionStorage` & `localStorage`)**:
-   - `localStorage.verifiedPhone`: Set upon OTP verification.
-   - `localStorage.completedSteps`: Tracks client-side step completion.
-   - `sessionStorage.pendingStripeCheckout`: Preserves wizard state across the Stripe checkout external redirect.
+Session state is distributed across three storage layers, each serving a specific lifecycle requirement:
+
+```mermaid
+flowchart LR
+    subgraph Browser Storage
+        C[js-cookie: token & user]
+        LS[localStorage: completedSteps & verifiedPhone]
+        SS[sessionStorage: pendingStripeCheckout]
+    end
+    subgraph Redux Store
+        RS[auth slice & vehicleTypes slice]
+    end
+    C -->|hydrateAuthFromCookies| RS
+    RS -->|redux-persist:root| LS
+```
+
+1. **HTTP Cookies (`js-cookie`)**:
+   - `token`: JWT string with a 7-day TTL.
+   - `user`: Serialized user object JSON with a 7-day TTL.
+   - `referredBy`: Referral code captured from URL query parameters with a 30-day TTL.
+   - *Role*: The durable source of truth that survives tab reloads and cross-origin navigations.
+2. **Redux Store (`src/redux/store.jsx`)**:
+   - Manages `auth` and `vehicleTypes`.
+   - Configured with `redux-persist` saving to `localStorage` under key `root`.
+   - Action `hydrateAuthFromCookies` restores Redux state from cookies if the store is empty upon navigation.
+   - *Note*: `persistor` is exported but `PersistGate` is not mounted in `main.jsx`.
+3. **Storage Utilities (`localStorage` / `sessionStorage`)**:
+   - `localStorage.verifiedPhone`: Stores sanitized phone number upon successful OTP verification.
+   - `localStorage.completedSteps`: Stores array of completed step identifiers (`step1_signup`, `step2_license`, etc.).
+   - `sessionStorage.pendingStripeCheckout`: Flag indicating an active Stripe checkout redirect is in progress.
+   - `sessionStorage.postSubscriptionFlow`: Preserves wizard state across the Stripe checkout external redirect.
 
 ### Core Redux Thunks (`src/redux/slices/auth.slice.jsx`)
 
-| Thunk Name | HTTP Route | Payload / FormData | Purpose |
+All onboarding document uploads hit the unified endpoint `POST /api/auth/onboard/driver/:driverId/documents?step=N` with `multipart/form-data`:
+
+| Thunk Name | HTTP Endpoint | Payload / Form Data | Purpose |
 |---|---|---|---|
-| `sendOtp` | `POST /api/auth/send-otp` | `{ phone, role: "driver" }` | Requests 6-digit SMS verification code |
-| `verifyOtp` | `POST /api/auth/verify-otp` | `{ phone, otp, role: "driver" }` | Validates code, stores token & user in cookies |
-| `onboard` | `POST /api/auth/onboard/driver` | `FormData` (file, name, email, phone, ssn, address, city, state, referredBy) | Creates initial driver profile |
-| `uploadDriverDocuments` | `POST /api/auth/onboard/driver/:id/documents?step=1` | `FormData` (files [front, back], licenseNumber, expiryDate) | Uploads Driver License images and metadata |
-| `uploadVehicleRegistrationDocuments` | `POST /api/auth/onboard/driver/:id/documents?step=2` | `FormData` (files [front]) | Uploads Vehicle Registration document |
+| `sendOtp` | `POST /api/auth/send-otp` | `{ phone, role: "driver" }` | Sends 6-digit SMS verification code |
+| `verifyOtp` | `POST /api/auth/verify-otp` | `{ phone, otp, role: "driver" }` | Validates OTP, saves `token` & `user` to cookies |
+| `onboard` | `POST /api/auth/onboard/driver` | `FormData` (file, name, email, phone, ssn, address, city, state, referredBy) | Creates initial driver account |
+| `uploadDriverDocuments` | `POST /api/auth/onboard/driver/:id/documents?step=1` | `FormData` (files [front, back], licenseNumber, expiryDate) | Uploads Driver License images & details |
+| `uploadVehicleRegistrationDocuments` | `POST /api/auth/onboard/driver/:id/documents?step=2` | `FormData` (files [front]) | Uploads Vehicle Registration document image |
 | `uploadInsuranceDocuments` | `POST /api/auth/onboard/driver/:id/documents?step=3` | `FormData` (files [front, back]) | Uploads Auto Insurance policy documents |
-| `uploadVehicleDetails` | `POST /api/auth/onboard/driver/:id/documents?step=4` | `FormData` (make, model, yearOfManufacture, color, VIN, licensePlateNumber, regionOfRegistration, expiryDate, vehicleType) | Uploads vehicle specifications |
+| `uploadVehicleDetails` | `POST /api/auth/onboard/driver/:id/documents?step=4` | `FormData` (make, model, yearOfManufacture, color, VIN, licensePlateNumber, regionOfRegistration, expiryDate, vehicleType) | Uploads vehicle specifications & VIN |
 
 ---
 
 ## 6. Driver Onboarding Wizard Specification
 
 ### Document Status Model
-Each document (`driverLicense`, `vehicleRegistration`, `insurance`, `vehicleDetails`) possesses one of four distinct states:
+Each document entity (`driverLicense`, `vehicleRegistration`, `insurance`, `vehicleDetails`) has four potential statuses:
 - `absent`: Never uploaded.
-- `pending`: Uploaded by driver; currently undergoing administrative review.
-- `approved`: Reviewed and accepted by admin.
-- `rejected`: Rejected by admin; contains `rejectReason` requiring resubmission.
+- `pending`: Uploaded by driver; awaiting administrative approval.
+- `approved`: Accepted by admin.
+- `rejected`: Rejected by admin; contains `rejectReason` requiring driver correction.
 
-### Sequential Step Architecture
+### Step Flow Architecture
 
 ```mermaid
 flowchart TD
     Login["/ (Login) - Phone Input"] --> OTP["/verification - 6-Digit OTP"]
     OTP --> Decision{resolvePostLoginRoute}
-    Decision -->|New User| Step1["/signup - Personal Details"]
-    Decision -->|Rejected Docs| VerifiedRej["/verified-account (Rejected State)"]
+    
+    Decision -->|New User / Not Onboarded| Step1["/signup (Your Details)"]
+    Decision -->|Rejected Documents| VerifiedRej["/verified-account (Rejected State)"]
     Decision -->|Pending Review + Active Sub| VerifiedSub["/verified-account (Under Review)"]
-    Decision -->|Approved Docs + No Sub| Sub["/subscription - Select Plan"]
-    Decision -->|Step Incomplete| StepResume["Resume Incomplete Doc Step"]
+    Decision -->|Docs Approved + Inactive Sub| Sub["/subscription (Select Plan)"]
+    Decision -->|Incomplete Document Step| StepResume["Resume Incomplete Doc Step"]
 
     Step1 --> Step2["/license-information (Driver License)"]
     Step2 --> Step3["/vehicle-details (Vehicle Registration)"]
@@ -207,152 +285,238 @@ flowchart TD
     CompleteSetup --> VerifiedSub
 ```
 
-### Detailed Step Matrix
+### Visual 5-Step Sidebar vs Logical 7-Step Route Mapping
+The user-facing UI displays a 5-step progress indicator via `SignupSidebar.jsx`, where Step 3 aggregates three separate document pages:
 
-1. **Step 1: Your Details (`/signup`)**
-   - Profile picture with mobile camera / gallery pickers.
-   - Name sanitization (alphabetic only, max 15 chars).
-   - Strict Florida address restriction:
-     - Google Places Autocomplete biased to Florida geographic bounding box (`24.396308, -87.634938` to `31.000968, -79.974306`).
-     - Rejects addresses outside Florida (e.g. "Florida, NY").
-     - Autofills city and state; locks city/state when selected via Google Places.
-   - US SSN formatting (`XXX-XX-XXXX`).
-   - Referral tracking from query parameters (`?referredBy=...`) saved to cookies.
+| Sidebar Step | Step Name | Route | Purpose | Sub-step Asset |
+|---|---|---|---|---|
+| Step 1 | Your Details | `/signup` | Profile, Florida address, SSN | N/A |
+| Step 2 | License Information | `/license-information` | Driver license front & back | N/A |
+| Step 3 | Vehicle Details | `/vehicle-details` | Vehicle registration document | `barone.png` (1/3) |
+| Step 3 | Vehicle Details | `/insurance-information` | Auto insurance policy front & back | `bartwo.png` (2/3) |
+| Step 3 | Vehicle Details | `/add-vehicle-details` | Vehicle make, model, VIN, plate | `barthree.png` (3/3) |
+| Step 4 | Subscription | `/subscription` | Platform membership plan | N/A |
+| Step 5 | Verified Account | `/verified-account` | Application status & review | N/A |
 
-2. **Step 2: License Information (`/license-information`)**
-   - Front and back driver license images (Max 5MB; JPG, PNG, HEIC, WEBP).
-   - License Number (6-15 alphanumeric characters).
-   - Future expiry date validation.
+### Detailed Step Specifications
 
-3. **Step 3: Vehicle Registration (`/vehicle-details`)**
-   - Official state vehicle registration document photo.
+#### 1. Phone Authentication (`Login.jsx`, `/`)
+- Formats input as US telephone number `(XXX) XXX-XXXX`.
+- Requires exactly 10 digits; prepends country code `1` before dispatching `sendOtp`.
+- Captures `?referredBy=` query parameter and stores in cookies for 30 days.
 
-4. **Step 4: Insurance Information (`/insurance-information`)**
-   - Auto insurance certificate (front and back documentation).
+#### 2. OTP Verification (`Verification.jsx`, `/verification`)
+- 6-digit numeric input with auto-advance and clipboard paste support.
+- 60-second countdown timer for resending OTP.
+- On success: saves `cleanPhone` to `localStorage.verifiedPhone`.
+- Evaluates `resolvePostLoginRoute` and redirects immediately to the appropriate onboarding step.
 
-5. **Step 5: Vehicle Details (`/add-vehicle-details`)**
-   - Dynamic vehicle categories fetched from `GET /api/admin/vehicle-types`.
-   - Vehicle Make, Model, Color, Year of Manufacture (must be within the last 15 years).
-   - 17-character VIN verification (excludes letters I, O, Q).
-   - License Plate formatting and registration expiration date.
+#### 3. Personal Profile (`Signup.jsx`, `/signup`)
+- Profile photo with dual-action picker: native camera capture or gallery selection.
+- Name fields: alphabetic characters only, maximum 15 characters.
+- Strict Florida address restriction:
+  - Google Places Autocomplete biased to Florida bounding coordinates (`24.396308, -87.634938` to `31.000968, -79.974306`).
+  - Strict validation rejects addresses outside Florida (e.g., "Florida, NY").
+  - Automatically extracts and locks City and State when selected via Places Autocomplete.
+- US Social Security Number (SSN) formatted as `XXX-XX-XXXX`.
+- Terms of Service and Privacy Policy interactive modals.
 
-6. **Step 6: Subscription (`/subscription`)**
-   - Fetches available plans from `GET /api/plan`.
-   - Purchases via `POST /api/subscription/purchase/:planId/:driverId`.
-   - Dispatches to Stripe Checkout.
+#### 4. Driver's License (`LicenseInformation.jsx`, `/license-information`)
+- Front and back image uploads (Max 5MB; JPG, PNG, HEIC/HEIF, WEBP).
+- License number validation: 6-15 alphanumeric characters.
+- Expiration date: must be at least 1 month in the future.
 
-7. **Step 7: Verification & Status Hub (`/verified-account`)**
-   - Polls `GET /api/auth/account-status/:driverId` every 10 seconds.
-   - **Submitted state**: Renders "Your profile is under review" screen with animated timer.
-   - **Rejected state**: Parses `rejectedDocuments`, displays formatted rejection reasons, and renders "Resubmit Documents".
-   - **Resubmission flow**: Uses `mergeRejectedDocumentsForResubmit` and `fetchUrlAsFile` to prefill unchanged data from remote S3 URLs while drivers update rejected files.
+#### 5. Vehicle Registration (`VehicleDetails.jsx`, `/vehicle-details`)
+- Single registration document photo upload (Max 5MB; JPG, PNG, HEIC/HEIF, WEBP).
+
+#### 6. Auto Insurance (`InsuranceInformation.jsx`, `/insurance-information`)
+- Front and back image uploads of current insurance card/policy.
+
+#### 7. Vehicle Specifications (`AddVehicleDetails.jsx`, `/add-vehicle-details`)
+- Dynamic vehicle categories loaded from `GET /api/admin/vehicle-types`.
+- Make, Model, Color.
+- Year of manufacture: restricted to vehicles manufactured within the last 15 years.
+- 17-character VIN verification (strict alphanumeric excluding letters I, O, and Q).
+- State/Region and License Plate number (1-7 uppercase alphanumeric characters).
+- Registration expiration date (future date validation).
+
+#### 8. Subscription (`Subscription.jsx`, `/subscription`)
+- Fetches active plans from `GET /api/plan`.
+- Dispatches purchase intent to `POST /api/subscription/purchase/:planId/:driverId`.
+- Preserves flow state in `sessionStorage` before navigating to the external Stripe Checkout session.
+
+#### 9. Stripe Return (`Completesetup.jsx`, `/complete-setup`)
+- Validates return parameters (`session_id`, `canceled`).
+- Checks driver subscription status via `GET /api/subscription/details/:driverId`.
+- On success: clears checkout session flags, flags `STEPS.SUBSCRIPTION` complete, and navigates to `/verified-account`.
+- On cancel/failure: navigates back to `/subscription`.
+
+#### 10. Verification Hub & Rejected Resubmission (`VerifiedAccount.jsx`, `/verified-account`)
+- Polls `GET /api/auth/account-status/:driverId` every 10 seconds.
+- **Submitted State**: Shows animated "Profile Under Review" screen.
+- **Approved State**: Renders approval confirmation.
+- **Rejected State**: Displays detailed administrative rejection reasons for each rejected document and presents a "Resubmit Documents" action.
+- **Resubmission Flow**:
+  - Computes the list of rejected documents.
+  - Utilizes `fetchUrlAsFile` (`src/utils/rejectedFlowPrefill.js`) to download existing valid assets from S3 as `File` objects so unchanged documents do not need to be re-uploaded.
+  - Calls `clearRejectedFlowState` on Redux upon successful resubmission to transition the UI back to review status.
 
 ---
 
-## 7. Real-Time Ride & Carpool Tracking Subsystem
+## 7. Public Real-Time Ride & Carpool Tracking Subsystem
 
-The tracking subsystem is accessible publicly via `/share` without authentication.
+The tracking subsystem is publicly accessible at `/share` without authentication.
 
-### Dispatcher (`src/pages/tracking/ShareTracking.jsx`)
-Inspects query parameters:
-- If `?carpool=...` exists: Mounts `CarpoolShare.jsx`.
-- Otherwise: Mounts `RideTracking.jsx`.
+### Dispatcher (`ShareTracking.jsx`)
+- Inspects query parameters:
+  - If `?carpool=...` is present: mounts `CarpoolShare.jsx`.
+  - Otherwise: mounts `RideTracking.jsx`.
 
-### Socket.IO Protocol & Event Architecture
-Both tracking interfaces connect using the WebSocket transport:
-```javascript
-io(baseUrl, {
-  transports: ["websocket"],
-  query: {
-    origin: "web",
-    rideId: "...",            // In RideTracking
-    carpoolId: "...",         // In CarpoolShare
-    passengerId: "...",       // In CarpoolShare
-  }
-});
+### WebSocket Protocol Architecture
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Web Browser (/share)
+    participant Socket as Socket.IO Server
+    
+    Client->>Socket: Connect query: { origin: 'web', rideId / carpoolId }
+    Socket-->>Client: connect
+    Socket-->>Client: ride:initial_data / carpool:initial_data
+    loop Telemetry Updates
+        Socket-->>Client: driver:location:update { coordinates: [lng, lat] }
+        Note over Client: Calculate bearing theta & interpolate car rotation
+    end
+    alt Status Transition
+        Socket-->>Client: ride:status:update / carpool:status:update
+        Note over Client: Navigate to /ride-ended or /ride-cancelled
+    else Error Event
+        Socket-->>Client: ride:error / carpool:error
+        Note over Client: Navigate to /ride-not-found
+    end
 ```
 
-#### Shared Socket Events
+### Shared & Dedicated Socket Events
 
-| Socket Event | Direction | Payload Structure | Action |
+| Socket Event | Direction | Payload Structure | Handler Action |
 |---|---|---|---|
-| `ride:initial_data` / `carpool:initial_data` | Server → Client | `{ data: { ride/carpool } }` | Sets up ride waypoints, driver info, and passenger list |
-| `ride:status:update` / `carpool:status:update` | Server → Client | `{ rideStatus: string }` | Updates badge; navigates to `/ride-ended` on completion |
-| `driver:location:update` | Server → Client | `{ coordinates: [lng, lat] }` | Updates live vehicle position and rotates car marker |
+| `ride:initial_data` | Server → Client | `{ data: { ride } }` | Initializes route points, pickup/dropoff, driver & passenger profile |
+| `carpool:initial_data` | Server → Client | `{ data: { carpool } }` | Initializes multi-stop waypoints, passenger manifests, and bookings |
+| `driver:location:update` | Server → Client | `{ coordinates: [lng, lat] }` | Updates live driver marker position and recalculates heading angle |
+| `ride:status:update` | Server → Client | `{ rideStatus: string }` | Updates status badge; navigates to `/ride-ended` or `/ride-cancelled` |
+| `carpool:status:update` | Server → Client | `{ status: string }` | Updates carpool status; triggers terminal transitions |
+| `carpool:route:update` | Server → Client | `{ stop: object, status: string }` | Updates waypoint and stop arrival status |
+| `carpool:route_update` | Server → Client | Multi-format payload | Handles immediate status updates without page reload |
+| `carpool:passenger_picked_up` | Server → Client | `{ passengerId: string }` | Updates passenger badge to picked up |
+| `carpool:passenger:pickup:confirmed` | Server → Client | Passenger-specific pickup event | Marks active viewer as picked up |
+| `carpool:passenger:dropped_off` | Server → Client | Passenger-specific dropoff event | Updates passenger dropoff status |
 | `ride:error` / `carpool:error` | Server → Client | `{ message: string }` | Triggers error toast and redirects to `/ride-not-found` |
-| `carpool:passenger:pickup:confirmed` | Server → Client | Passenger-specific pickup event | Marks passenger as `picked_up` |
-| `carpool:passenger:dropped_off` | Server → Client | Passenger-specific dropoff event | Updates individual passenger progress |
 
-### Map Rendering & Animation Pipeline
-- **Vector Maps**: Uses Google Maps with `mapId` (`VITE_GOOGLE_MAP_ID`).
-- **Vehicle Heading Calculation**: Computes bearing between previous coordinates and incoming GPS coordinates:
-  $$\theta = \text{atan2}(\sin(\Delta \lambda) \cdot \cos(\phi_2), \cos(\phi_1) \cdot \sin(\phi_2) - \sin(\phi_1) \cdot \cos(\phi_2) \cdot \cos(\Delta \lambda))$$
-- Smoothly animates heading transitions using `requestAnimationFrame`.
-- Displays real-time route path connecting pickup, journey points, driver position, and destination.
-
----
-
-## 8. Current Health, Linter Report & Known Technical Debt
-
-### ESLint Status Audit
-Running `npm run lint` identifies 120 issues (109 errors, 11 warnings):
-1. **Unescaped Quotes in JSX (`react/no-unescaped-entities`)**:
-   - Quotes in strings like `"` or `'` inside JSX tags in `LicenseInformation.jsx`, `AddVehicleDetails.jsx`, `Verification.jsx`.
-2. **React 19 Unused Import (`no-unused-vars`)**:
-   - `import React from 'react';` flagged across components where JSX transform is active.
-3. **Dead / Unused Variables**:
-   - `countryCode` in `Login.jsx`
-   - `Check`, `isStepCompleted` in `Subscription.jsx`
-   - `handleBack` in `VehicleDetails.jsx`
-   - `ChevronLeft` in `Verification.jsx`
-   - `Phone`, `MessageCircle`, `furtherCarpoolStatus` in `CarpoolShare.jsx`
-4. **Regular Expression Warnings in `Signup.jsx`**:
-   - `no-useless-escape`: Unnecessary escape of `/` on line 22.
-   - `no-misleading-character-class`: Emoji character range regex on line 23.
-5. **Base URL Configuration**:
-   - Currently hardcoded in `src/axios.js` rather than parameterized through `import.meta.env.VITE_API_URL`.
+### Map Telemetry & Rotation Math
+- Uses Google Maps JavaScript API with vector map capability (`mapId`).
+- Calculates vehicle bearing between previous position $(\phi_1, \lambda_1)$ and new GPS coordinates $(\phi_2, \lambda_2)$:
+  $$\theta = \operatorname{atan2}\left(\sin(\Delta\lambda)\cos(\phi_2),\; \cos(\phi_1)\sin(\phi_2) - \sin(\phi_1)\cos(\phi_2)\cos(\Delta\lambda)\right)$$
+- Converts bearing $\theta$ from radians to degrees, normalized to $[0, 360^\circ)$.
+- Applies smooth rotation to the vehicle marker using `requestAnimationFrame`.
+- Computes turn-by-turn driving routes via `google.maps.DirectionsService` with polyline fallback.
 
 ---
 
-## 9. Developer Onboarding Cheat Sheet
+## 8. Backend API Reference Matrix
 
-### Essential Commands
+The following reference is derived from both the codebase thunks and `Epic Rides.postman_collection 9.json`:
+
+| Category | Method | Endpoint | Auth | Request Body | Description |
+|---|---|---|---|---|---|
+| **Auth** | `POST` | `/api/auth/send-otp` | Public | JSON `{ phone, role }` | Requests SMS verification code |
+| **Auth** | `POST` | `/api/auth/verify-otp` | Public | JSON `{ phone, otp, role }` | Validates code; returns token & user profile |
+| **Auth** | `POST` | `/api/auth/onboard/:role` | Public | FormData (file, name, email, phone, ssn, address, city, state, referredBy) | Creates initial driver profile |
+| **Auth** | `POST` | `/api/auth/onboard/driver/:id/documents?step=1` | Public | FormData (files [front, back], licenseNumber, expiryDate) | Uploads driver license documents |
+| **Auth** | `POST` | `/api/auth/onboard/driver/:id/documents?step=2` | Public | FormData (files [front]) | Uploads vehicle registration document |
+| **Auth** | `POST` | `/api/auth/onboard/driver/:id/documents?step=3` | Public | FormData (files [front, back]) | Uploads auto insurance policy documents |
+| **Auth** | `POST` | `/api/auth/onboard/driver/:id/documents?step=4` | Public | FormData (make, model, year, color, VIN, plate, region, expiry, vehicleType) | Uploads vehicle specifications |
+| **Auth** | `GET` | `/api/auth/account-status/:driverId` | Bearer | None | Fetches real-time driver review/approval status |
+| **Auth** | `POST` | `/api/auth/logout` | Bearer | None | Invalidates driver session |
+| **Admin** | `GET` | `/api/admin/vehicle-types` | Bearer | None | Fetches allowable vehicle categories |
+| **Plan** | `GET` | `/api/plan` | Public | None | Lists available driver membership subscription plans |
+| **Subscription** | `POST` | `/api/subscription/purchase/:planId` | Bearer | None | Creates Stripe checkout session for plan |
+| **Subscription** | `GET` | `/api/subscription/details/:driverId` | Bearer | None | Retrieves driver subscription status |
+| **Subscription** | `POST` | `/api/subscription/cancel/:driverId` | Bearer | None | Cancels active platform membership |
+
+---
+
+## 9. Environment Variables & Runtime Configuration
+
+### `.env` File Reference
+Create or configure `.env` in the repository root:
+```env
+# Google Maps JavaScript API key for vector maps & Places autocomplete
+VITE_GOOGLE_MAPS_API_KEY=AIzaSy...
+
+# Google Maps Vector Map ID (required for AdvancedMarkerElement)
+VITE_GOOGLE_MAP_ID=AIzaSy...
+
+# Backend API base URL (Note: src/axios.js currently overrides this with a hardcoded constant)
+VITE_API_BASE_URL=https://api.staging.epicridesapp.com/
+```
+
+### Build & Scripts Reference
 ```bash
-# Start Vite development server (port 5173)
+# Start Vite development server (http://localhost:5173)
 npm run dev
 
 # Compile production bundle to /dist
 npm run build
 
-# Run ESLint across codebase
+# Run ESLint across entire project
 npm run lint
 
-# Preview built production distribution
+# Preview built production distribution locally
 npm run preview
 ```
 
-### Environment Variables (`.env`)
-```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-VITE_GOOGLE_MAP_ID=your_vector_map_id
-VITE_APP_FIREBASE_KEY=optional_firebase_key
-```
+---
 
-### Key Routing Reference Table
-| Route | Component | Access / Requirement |
-|---|---|---|
-| `/` | `Login.jsx` | Public (Phone number input) |
-| `/verification` | `Verification.jsx` | Requires phone number in Redux or router state |
-| `/signup` | `Signup.jsx` | Requires verified phone in localStorage |
-| `/license-information` | `LicenseInformation.jsx` | Requires completed signup step |
-| `/vehicle-details` | `VehicleDetails.jsx` | Requires completed license step |
-| `/insurance-information` | `InsuranceInformation.jsx` | Requires completed vehicle registration step |
-| `/add-vehicle-details` | `AddVehicleDetails.jsx` | Requires completed insurance step |
-| `/subscription` | `Subscription.jsx` | Requires completed document steps (or approved user) |
-| `/complete-setup` | `Completesetup.jsx` | Stripe checkout return endpoint |
-| `/verified-account` | `VerifiedAccount.jsx` | Displays pending, approved, or rejected status |
-| `/share` | `ShareTracking.jsx` | Public tracking dispatcher (`?ride=...` or `?carpool=...`) |
-| `/ride-ended` | `RideEnded.jsx` | Rendered on ride completion / terminal state |
-| `/ride-cancelled` | `RideCancelled.jsx` | Rendered on ride cancellation |
-| `/ride-not-found` | `RideNotFound.jsx` | Rendered on invalid/expired ride ID |
-| `*` | `NotFound.jsx` | Catch-all 404 page |
+## 10. Codebase Health, ESLint Audit & Known Technical Debt
+
+### ESLint Status Audit
+Running `npm run lint` identifies 120 issues (109 errors, 11 warnings):
+
+1. **React 19 Unused Import (`no-unused-vars`)**:
+   - `import React from 'react';` is flagged in files where `React.` is not directly referenced (due to React 19 automatic JSX runtime).
+2. **Unused Variables & Imports in Production Code**:
+   - `handleBack` in `VehicleDetails.jsx` and `InsuranceInformation.jsx`.
+   - `Check`, `isStepCompleted` in `Subscription.jsx`.
+   - `otpSent` in `Verification.jsx`.
+   - `Phone`, `MessageCircle`, `furtherCarpoolStatus`, `statusRenderKey` in `CarpoolShare.jsx`.
+   - `Phone`, `MessageCircle`, `progress`, `setProgress` in `RideTracking.jsx`.
+   - `index` parameter in `src/redux/slices/auth.slice.jsx` line 191.
+3. **Unescaped Quotes in JSX (`react/no-unescaped-entities`)**:
+   - Unescaped double quotes (`"`) inside JSX text in `LicenseInformation.jsx` (lines 623, 713) and `InsuranceInformation.jsx` (lines 399, 472).
+4. **Regular Expression Issues in `Signup.jsx`**:
+   - `no-useless-escape`: Unnecessary escape of `/` on line 32.
+   - `no-misleading-character-class`: Emoji character range regex on line 33.
+5. **Template Boilerplate Remnants**:
+   - The majority of the remaining errors reside in `src/pages/app/DummyHome.jsx`, `src/pages/authentication/DummyLogin.jsx`, `src/layouts/`, and `src/hooks/api/`.
+
+### Architectural Debt & Recommended Cleanups
+1. **Base URL Parameterization**:
+   - `src/axios.js` should read `import.meta.env.VITE_API_BASE_URL` with a fallback instead of requiring manual code edits to switch environments.
+2. **Redux PersistGate**:
+   - `persistor` is exported from `src/redux/store.jsx` but not mounted in `main.jsx` with `<PersistGate persistor={persistor}>`. Mounting it will ensure rehydrated state is ready before initial render.
+3. **Device Fingerprinting Deduplication**:
+   - `getDeviceFingerprint` is defined in `src/axios.js` but never exported or referenced. It should either be wired into auth thunks or removed.
+4. **Bundle Code-Splitting**:
+   - Vite produces a warning during build because the main vendor chunk exceeds 500 kB (683 kB minified). Adding Rollup manual chunks for `@react-google-maps/api`, `socket.io-client`, and `@reduxjs/toolkit` will optimize initial load times.
+
+---
+
+## 11. Developer Onboarding & Future Work Guidelines
+
+When starting new feature development or bug fixes on this repository, observe the following rules:
+
+1. **Do Not Touch Boilerplate**: Avoid refactoring or importing from `src/pages/app`, `src/layouts`, `src/context`, or `src/hooks/api` unless explicitly migrating or removing them.
+2. **Preserve Decoupling Between RideTracking and CarpoolShare**: `RideTracking.jsx` and `CarpoolShare.jsx` are intentionally kept separate to prevent regression in single-ride telemetry when tuning carpool multi-stop logic.
+3. **Always Route via `resolvePostLoginRoute`**: Do not create ad-hoc routing decisions after login or OTP verification. Update `src/utils/onboardingRedirect.js` so that all post-login destinations remain synchronized with server truth.
+4. **Update Onboarding Whitelist for New Steps**: Any new onboarding route must be added to `onboardingPaths` in `src/axios.js` to avoid unexpected 401 logouts during wizard progression.
+5. **Respect Florida-Only Geofencing**: Any modification to driver addresses must maintain the Florida bounding box restriction and Florida state validation regex.

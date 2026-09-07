@@ -10,7 +10,7 @@ import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
-import { barthree, Hash, sedan, SUV } from '../../assets/export';
+import { barthree } from '../../assets/export';
 import { GoAlertFill } from "react-icons/go";
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
 import { isDocumentRoute } from '../../utils/onboardingRedirect';
@@ -196,11 +196,12 @@ const AddVehicleDetails = () => {
     }));
   };
 
-  const getVehicleTypeIcon = (type) => {
-    const normalizedType = String(type || '').toLowerCase();
-    if (normalizedType.includes('suv')) return SUV;
-    if (normalizedType.includes('hatch')) return Hash;
-    return sedan;
+  const getVehicleTypeIcon = (model) => {
+    const m = (model || '').toLowerCase();
+    if (m === 'suv') return '/public/icons/suv.svg';
+    if (m === 'sedan') return '/public/icons/sedan.svg';
+    if (m === 'hatchback') return '/public/icons/hatchback.svg';
+    return '/public/icons/default.svg';
   };
 
   const handleLogout = () => {
@@ -246,14 +247,15 @@ const AddVehicleDetails = () => {
       }
     });
 
-    // Validate year of manufacture (should not be more than 15 years old)
+    // Validate year of manufacture (should not be more than 15 years old, up to next year)
     const currentYear = new Date().getFullYear();
     const manufactureYear = parseInt(vehicleDetails.yearOfManufacture);
     const minYear = currentYear - 15;
+    const maxYear = currentYear + 1;
 
     if (vehicleDetails.yearOfManufacture && vehicleDetails.yearOfManufacture.trim()) {
-      if (isNaN(manufactureYear) || manufactureYear < minYear || manufactureYear > currentYear) {
-        errors.yearOfManufacture = `Year of manufacture should be between ${minYear} and ${currentYear}`;
+      if (isNaN(manufactureYear) || manufactureYear < minYear || manufactureYear > maxYear) {
+        errors.yearOfManufacture = `Year of manufacture should be between ${minYear} and ${maxYear}`;
       }
     }
 
@@ -542,74 +544,192 @@ const AddVehicleDetails = () => {
           </div>
 
           {/* Form Container */}
-          <div className="flex flex-col md:flex-row items-start gap-3 md:gap-[14px] mb-0 w-full md:w-[746px]">
-            {/* Left Column */}
-            <div className="flex flex-col items-start gap-3 md:gap-4 w-full md:w-[200px]">
-              {/* Make */}
-              <div className="flex flex-row items-start gap-2.5 w-full">
-                <div className="flex flex-col items-start gap-1 flex-1">
+          <div className="flex flex-col items-start gap-4 md:gap-5 mb-0 w-full md:w-[746px]">
+            {/* Top 3-Column Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 w-full">
+              {/* Column 1: Make & Year Of Manufacture */}
+              <div className="flex flex-col items-start gap-3 md:gap-4 w-full">
+                {/* Make */}
+                <div className="flex flex-row items-start gap-2.5 w-full">
+                  <div className="flex flex-col items-start gap-1 flex-1">
+                    <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                      Make
+                    </label>
+                    <input
+                      type="text"
+                      name="make"
+                      value={vehicleDetails.make}
+                      onChange={handleInputChange}
+                      placeholder="Enter Vehicle Make"
+                      className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                        backdropFilter: 'blur(42px)',
+                        border: fieldErrors.make ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                        color: vehicleDetails.make ? '#FFFFFF' : '#808080'
+                      }}
+                    />
+                    {fieldErrors.make && (
+                      <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
+                        {fieldErrors.make}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Year Of Manufacture */}
+                <div className="flex flex-row items-start gap-2.5 w-full">
+                  <div className="flex flex-col items-start gap-1 flex-1">
+                    <div className="flex flex-row justify-center items-center gap-1">
+                      <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                        Year Of Manufacture
+                      </label>
+                      <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-[#61CB08] flex items-center justify-center">
+                        <Info size={8} color="#000B00" strokeWidth={2.5} className="md:w-2.5 md:h-2.5 cursor-pointer" onClick={openModal} />
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      name="yearOfManufacture"
+                      value={vehicleDetails.yearOfManufacture}
+                      onChange={handleInputChange}
+                      placeholder="Enter Year Here"
+                      inputMode="numeric"
+                      maxLength={4}
+                      className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                        backdropFilter: 'blur(42px)',
+                        border: fieldErrors.yearOfManufacture ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                        color: vehicleDetails.yearOfManufacture ? '#FFFFFF' : '#808080'
+                      }}
+                    />
+                    {fieldErrors.yearOfManufacture && (
+                      <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
+                        {fieldErrors.yearOfManufacture}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 2: Model & Color */}
+              <div className="flex flex-col items-start gap-3 md:gap-4 w-full">
+                {/* Model */}
+                <div className="flex flex-col items-start gap-1 w-full">
                   <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                    Make
+                    Model
                   </label>
                   <input
                     type="text"
-                    name="make"
-                    value={vehicleDetails.make}
+                    name="model"
+                    value={vehicleDetails.model}
                     onChange={handleInputChange}
-                    placeholder="Enter Vehicle Make"
+                    placeholder="Enter Vehicle Model"
                     className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
                     style={{
                       background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
                       backdropFilter: 'blur(42px)',
-                      border: fieldErrors.make ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                      color: vehicleDetails.make ? '#FFFFFF' : '#808080'
+                      border: fieldErrors.model ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                      color: vehicleDetails.model ? '#FFFFFF' : '#808080'
                     }}
                   />
-                  {fieldErrors.make && (
+                  {fieldErrors.model && (
                     <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                      {fieldErrors.make}
+                      {fieldErrors.model}
                     </span>
                   )}
                 </div>
-              </div>
 
-              {/* Year Of Manufacture */}
-              <div className="flex flex-row items-start gap-2.5 w-full">
-                <div className="flex flex-col items-start gap-1 flex-1">
-                  <div className="flex flex-row justify-center items-center gap-1">
-                    <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                      Year Of Manufacture
-                    </label>
-                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-[#61CB08] flex items-center justify-center">
-                      <Info size={8} color="#000B00" strokeWidth={2.5} className="md:w-2.5 md:h-2.5 cursor-pointer" onClick={openModal} />
-                    </div>
-                  </div>
+                {/* Color */}
+                <div className="flex flex-col items-start gap-1 w-full">
+                  <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                    Color
+                  </label>
                   <input
                     type="text"
-                    name="yearOfManufacture"
-                    value={vehicleDetails.yearOfManufacture}
+                    name="color"
+                    value={vehicleDetails.color}
                     onChange={handleInputChange}
-                    placeholder="Enter Year Here"
-                    inputMode="numeric"
-                    maxLength={4}
+                    placeholder="Enter Vehicle Color"
                     className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
                     style={{
                       background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
                       backdropFilter: 'blur(42px)',
-                      border: fieldErrors.yearOfManufacture ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                      color: vehicleDetails.yearOfManufacture ? '#FFFFFF' : '#808080'
+                      border: fieldErrors.color ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                      color: vehicleDetails.color ? '#FFFFFF' : '#808080'
                     }}
                   />
-                  {fieldErrors.yearOfManufacture && (
+                  {fieldErrors.color && (
                     <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                      {fieldErrors.yearOfManufacture}
+                      {fieldErrors.color}
                     </span>
                   )}
                 </div>
               </div>
 
+              {/* Column 3: State/Region & Registration Expiry Date */}
+              <div className="flex flex-col items-start gap-3 md:gap-4 w-full">
+                {/* State/Region Of Registration */}
+                <div className="flex flex-col items-start gap-1 w-full">
+                  <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                    State/Region Of Registration
+                  </label>
+                  <input
+                    type="text"
+                    name="stateRegion"
+                    value={vehicleDetails.stateRegion}
+                    onChange={handleInputChange}
+                    placeholder="Enter State/Region"
+                    className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                      backdropFilter: 'blur(42px)',
+                      border: fieldErrors.stateRegion ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                      color: vehicleDetails.stateRegion ? '#FFFFFF' : '#808080'
+                    }}
+                  />
+                  {fieldErrors.stateRegion && (
+                    <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
+                      {fieldErrors.stateRegion}
+                    </span>
+                  )}
+                </div>
+
+                {/* Registration Expiry Date */}
+                <div className="flex flex-col items-start gap-1 w-full">
+                  <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                    Registration Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="registrationExpiryDate"
+                    value={vehicleDetails.registrationExpiryDate}
+                    onChange={handleInputChange}
+                    min={getMinExpiryDate()}
+                    max={getMaxDate()}
+                    placeholder="Enter Expiry Date"
+                    className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                      backdropFilter: 'blur(42px)',
+                      border: fieldErrors.registrationExpiryDate ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
+                      color: '#FFFFFF'
+                    }}
+                  />
+                  {fieldErrors.registrationExpiryDate && (
+                    <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
+                      {fieldErrors.registrationExpiryDate}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle Identification Number and License Plate Number in a Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
               {/* Vehicle Identification Number */}
-              <div className="flex flex-col items-start gap-1 w-full md:w-[380px]">
+              <div className="flex flex-col items-start gap-1 w-full">
                 <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
                   Vehicle Identification Number
                 </label>
@@ -635,7 +755,7 @@ const AddVehicleDetails = () => {
               </div>
 
               {/* License Plate Number */}
-              <div className="flex flex-col items-start gap-1 w-full md:w-[380px]">
+              <div className="flex flex-col items-start gap-1 w-full">
                 <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
                   License Plate Number
                 </label>
@@ -659,192 +779,73 @@ const AddVehicleDetails = () => {
                   </span>
                 )}
               </div>
-
             </div>
 
-            {/* Middle Column */}
-            <div className="flex flex-col items-start gap-3 md:gap-4 w-full md:w-[343px]">
-              {/* Model */}
-              <div className="flex flex-col items-start gap-1 w-full">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Model
-                </label>
-                <input
-                  type="text"
-                  name="model"
-                  value={vehicleDetails.model}
-                  onChange={handleInputChange}
-                  placeholder="Enter Vehicle Model"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.model ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: vehicleDetails.model ? '#FFFFFF' : '#808080'
-                  }}
-                />
-                {fieldErrors.model && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.model}
-                  </span>
-                )}
-              </div>
-
-              {/* Color */}
-              <div className="flex flex-col items-start gap-1 w-full">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Color
-                </label>
-                <input
-                  type="text"
-                  name="color"
-                  value={vehicleDetails.color}
-                  onChange={handleInputChange}
-                  placeholder="Enter Vehicle Color"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.color ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: vehicleDetails.color ? '#FFFFFF' : '#808080'
-                  }}
-                />
-                {fieldErrors.color && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.color}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col items-start gap-3 md:gap-4 md:pl-[1em] w-full md:w-[343px]">
-              {/* State/Region Of Registration */}
-              <div className="flex flex-col items-start gap-1 w-full">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  State/Region Of Registration
-                </label>
-                <input
-                  type="text"
-                  name="stateRegion"
-                  value={vehicleDetails.stateRegion}
-                  onChange={handleInputChange}
-                  placeholder="Enter State/Region"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.stateRegion ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: vehicleDetails.stateRegion ? '#FFFFFF' : '#808080'
-                  }}
-                />
-                {fieldErrors.stateRegion && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.stateRegion}
-                  </span>
-                )}
-              </div>
-
-              {/* Registration Expiry Date */}
-              <div className="flex flex-col items-start gap-1 w-full">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Registration Expiry Date
-                </label>
-                <input
-                  type="date"
-                  name="registrationExpiryDate"
-                  value={vehicleDetails.registrationExpiryDate}
-                  onChange={handleInputChange}
-                  min={getMinExpiryDate()}
-                  max={getMaxDate()}
-                  placeholder="Enter Expiry Date"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 rounded-xl outline-none placeholder:text-[#808080] font-poppins text-xs md:text-sm h-10 md:h-[44px]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                    backdropFilter: 'blur(42px)',
-                    border: fieldErrors.registrationExpiryDate ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                    color: '#FFFFFF'
-                  }}
-                />
-                {fieldErrors.registrationExpiryDate && (
-                  <span className="text-[#EF4444] text-xs font-poppins mt-0.5">
-                    {fieldErrors.registrationExpiryDate}
-                  </span>
-                )}
-              </div>
-
-              {/* Vehicle Type */}
-              <div className="flex flex-col items-start gap-2 md:gap-2.5 w-full">
-                <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
-                  Vehicle Type
-                </label>
-                {isVehicleTypesLoading ? (
-                  <div className="w-full px-4 py-3 rounded-xl border border-[#61CB08]/40 bg-[#61CB08]/10">
-                    <p className="font-poppins text-xs md:text-sm text-[#61CB08] text-center">
-                      Loading vehicles...
-                    </p>
-                  </div>
-                ) : hasVehicleTypes ? (
-                  <div
-                    className={`vehicle-type-scroll flex flex-row items-center gap-2 md:gap-3 w-full md:justify-start ${vehicleTypeOptions.length > 3
-                      ? 'justify-start overflow-x-auto pb-1'
-                      : 'justify-center overflow-x-hidden'
-                      }`}
-                    style={vehicleTypeOptions.length > 3 ? { scrollbarColor: '#61CB08 transparent', scrollbarWidth: 'thin' } : {}}
-                  >
-                    {vehicleTypeOptions.map((type) => {
-                      const isSelected = vehicleDetails.vehicleType === type.value;
-                      return (
-                        <button
-                          key={type.id}
-                          type="button"
-                          onClick={() => handleVehicleTypeSelect(type.value)}
-                          className="relative flex flex-col items-center justify-end pb-3 cursor-pointer shrink-0"
-                          style={{
-                            width: '92px',
-                            height: '94px',
-                            background: isSelected
-                              ? 'linear-gradient(180deg, rgba(97, 203, 8, 0.3) 0%, rgba(97, 203, 8, 0.2) 50%, rgba(97, 203, 8, 0.15) 100%)'
-                              : 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                            backdropFilter: 'blur(34px)',
-                            borderRadius: '9.72px',
-                            border: isSelected ? 'none' : '1px solid rgba(97, 203, 8, 0.32)',
-                            boxShadow: isSelected
-                              ? '0px 0px 10.53px rgba(97, 203, 8, 0.28), inset 0px 0px 8.91px rgba(97, 203, 8, 0.25), inset 0px 0px 1.62px 1.62px rgba(97, 203, 8, 0.4)'
-                              : 'none'
-                          }}
-                        >
-                          {isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#61CB08] rounded-md flex items-center justify-center">
-                              <Check size={10} color="#000B00" strokeWidth={3} />
-                            </div>
-                          )}
-                          {!isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 border border-[#61CB08] rounded-md"></div>
-                          )}
-                          <div className="flex items-center justify-center mb-2">
-            
-                             <img
-                              src={getVehicleTypeIcon(type.model || type.label || type.apiValue || type.value)}
-                              alt={type.label}
-                              className='w-[3.2em]'
-                            />
+            {/* Vehicle Type (Grid without horizontal scroll) */}
+            <div className="flex flex-col items-start gap-2 md:gap-2.5 w-full">
+              <label className="font-poppins font-semibold text-xs md:text-sm leading-[120%] capitalize text-white">
+                Vehicle Type
+              </label>
+              {isVehicleTypesLoading ? (
+                <div className="w-full px-4 py-3 rounded-xl border border-[#61CB08]/40 bg-[#61CB08]/10">
+                  <p className="font-poppins text-xs md:text-sm text-[#61CB08] text-center">
+                    Loading vehicles...
+                  </p>
+                </div>
+              ) : hasVehicleTypes ? (
+                <div className="flex flex-wrap items-center gap-2.5 md:gap-3 w-full justify-start">
+                  {vehicleTypeOptions.map((type) => {
+                    const isSelected = vehicleDetails.vehicleType === type.value;
+                    return (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => handleVehicleTypeSelect(type.value)}
+                        className="relative flex flex-col items-center justify-between pt-3 pb-2.5 px-2 cursor-pointer shrink-0 transition-all duration-200"
+                        style={{
+                          width: '92px',
+                          height: '94px',
+                          background: isSelected
+                            ? 'linear-gradient(180deg, rgba(97, 203, 8, 0.3) 0%, rgba(97, 203, 8, 0.2) 50%, rgba(97, 203, 8, 0.15) 100%)'
+                            : 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                          backdropFilter: 'blur(34px)',
+                          borderRadius: '9.72px',
+                          border: isSelected ? 'none' : '1px solid rgba(97, 203, 8, 0.32)',
+                          boxShadow: isSelected
+                            ? '0px 0px 10.53px rgba(97, 203, 8, 0.28), inset 0px 0px 8.91px rgba(97, 203, 8, 0.25), inset 0px 0px 1.62px 1.62px rgba(97, 203, 8, 0.4)'
+                            : 'none'
+                        }}
+                      >
+                        {isSelected ? (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#61CB08] rounded-md flex items-center justify-center pointer-events-none">
+                            <Check size={10} color="#000B00" strokeWidth={3} />
                           </div>
-                          <span className="font-poppins font-bold text-[10px] leading-[120%] text-center text-white">
-                            {type.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="w-full px-4 py-3 rounded-xl border border-[#61CB08]/40 bg-[#61CB08]/10">
-                    <p className="font-poppins text-xs md:text-sm text-[#61CB08] text-center">
-                      No vehicle found
-                    </p>
-                  </div>
-                )}
-              </div>
+                        ) : (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 border border-[#61CB08] rounded-md pointer-events-none"></div>
+                        )}
+
+                        <div className="w-full flex-1 flex items-center justify-center pt-1">
+                          <img
+                            src={getVehicleTypeIcon(type.model)}
+                            alt={type.label}
+                            className="w-[56px] h-[30px] object-contain"
+                          />
+                        </div>
+
+                        <span className="font-poppins font-bold text-[10px] leading-[120%] text-center text-white">
+                          {type.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="w-full px-4 py-3 rounded-xl border border-[#61CB08]/40 bg-[#61CB08]/10">
+                  <p className="font-poppins text-xs md:text-sm text-[#61CB08] text-center">
+                    No vehicle found
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
