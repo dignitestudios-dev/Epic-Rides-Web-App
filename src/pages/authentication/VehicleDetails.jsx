@@ -8,6 +8,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { barone } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
@@ -280,7 +281,7 @@ const VehicleDetails = () => {
   }, [user, stepToComplete, formData, navigate]);
 
   return (
-    <div className="relative w-full min-h-screen bg-black overflow-hidden">
+    <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
       {/* Top Right Logout Button */}
       <TopRightLogoutButton onClick={handleLogout} />
 
@@ -291,27 +292,28 @@ const VehicleDetails = () => {
       <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-center justify-center md:justify-end overflow-y-auto pt-20 md:pt-0 pb-10">
-        <div className="w-full max-w-[calc(100%-2rem)] md:max-w-[75rem] flex flex-col items-center justify-center md:pr-0 py-6 md:py-8 px-4 md:px-8">
-          {/* Header */}
-          <div className="text-center mb-6 md:mb-8 w-full">
-            <h1
-              className="font-semibold mb-3 md:mb-4 leading-tight text-xl md:text-3xl lg:text-4xl"
-              style={{
-                fontFamily: 'Poppins',
-                color: '#FFFFFF',
-                letterSpacing: '-0.5px'
-              }}
-            >
-              Upload Vehicle Registration
-            </h1>
-            <div className='flex justify-center items-center pt-2 md:pt-3'>
-              <img src={barone} alt="Vehicle" className='w-32 md:w-48 lg:w-56 h-auto' />
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
+          <div className="w-full max-w-md my-auto flex flex-col items-center">
+            {/* Header */}
+            <div className="text-center mb-6 md:mb-8 w-full">
+              <h1
+                className="font-semibold mb-3 md:mb-4 leading-tight text-xl md:text-3xl lg:text-4xl"
+                style={{
+                  fontFamily: 'Poppins',
+                  color: '#FFFFFF',
+                  letterSpacing: '-0.5px'
+                }}
+              >
+                Upload Vehicle Registration
+              </h1>
+              <div className='flex justify-center items-center pt-2 md:pt-3'>
+                <img src={barone} alt="Vehicle" className='w-32 md:w-48 lg:w-56 h-auto' />
+              </div>
             </div>
-          </div>
 
-          {/* Form Container */}
-          <div className="w-full max-w-[30em] space-y-4 md:space-y-6">
+            {/* Form Container */}
+            <div className="w-full space-y-4 md:space-y-6">
             {/* Upload Front Image */}
             <div className="space-y-2">
               <label
@@ -408,7 +410,7 @@ const VehicleDetails = () => {
               <button
                 onClick={handleNext}
                 disabled={isLoading}
-                className="w-full py-3 md:py-3 rounded-lg font-poppins font-semibold text-sm md:text-sm capitalize transition-colors duration-200 disabled:cursor-not-allowed"
+                className="w-full py-3 md:py-3 rounded-xl font-poppins font-semibold text-sm md:text-sm capitalize transition-colors duration-200 disabled:cursor-not-allowed"
                 style={{
                   background: isLoading ? '#61CB0866' : '#61CB08',
                   color: '#000B00',
@@ -428,10 +430,14 @@ const VehicleDetails = () => {
               >
                 {isLoading ? 'Uploading...' : 'Next'}
               </button>
+
+              {/* Logout Button below Next */}
+              <LogoutButton onClick={handleLogout} className="mt-3 !rounded-lg" />
             </div>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Logout Modal */}
       <LogoutModal

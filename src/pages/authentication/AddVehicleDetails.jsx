@@ -9,6 +9,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { barthree } from '../../assets/export';
 import { GoAlertFill } from "react-icons/go";
@@ -198,10 +199,10 @@ const AddVehicleDetails = () => {
 
   const getVehicleTypeIcon = (model) => {
     const m = (model || '').toLowerCase();
-    if (m === 'suv') return '/public/icons/suv.svg';
-    if (m === 'sedan') return '/public/icons/sedan.svg';
-    if (m === 'hatchback') return '/public/icons/hatchback.svg';
-    return '/public/icons/default.svg';
+    if (m === 'suv') return '/icons/suv.svg';
+    if (m === 'sedan') return '/icons/sedan.svg';
+    if (m === 'hatchback') return '/icons/hatchback.svg';
+    return '/icons/default.svg';
   };
 
   const handleLogout = () => {
@@ -522,14 +523,13 @@ const AddVehicleDetails = () => {
       <SignupSidebar currentStep={3} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
-        <div className="w-full md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 sm:pt-[10em] min-[375px]:max-[500px]:pt-0 md:py-8 px-4 md:px-0 md:!pl-[10em] min-[1200px]:!pl-[24em] min-[1200px]:pt-[4em] xl:!pl-[18em] 2xl:!pl-0">
-          {/* Header */}
-          <div className="flex flex-col justify-center items-center gap-4 md:gap-8 mb-6 md:mb-8">
-            {/* Title */}
-            <div className="flex flex-col justify-center items-center gap-4 md:gap-6">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-12">
+          <div className="w-full max-w-[760px] my-auto flex flex-col items-center">
+            {/* Header */}
+            <div className="flex flex-col justify-center items-center gap-2 md:gap-4 mb-6 md:mb-8 text-center">
               <h1
-                className="font-poppins font-semibold text-center leading-tight m-0 text-xl md:text-[39px] w-full md:w-[383px]"
+                className="font-poppins font-semibold text-center leading-tight m-0 text-xl md:text-[34px]"
                 style={{
                   color: '#FFFFFF'
                 }}
@@ -537,14 +537,13 @@ const AddVehicleDetails = () => {
                 Add Vehicle Details
               </h1>
               {/* Progress Bars */}
-              <div className="flex justify-center items-center pt-2 md:pt-4">
-                <img src={barthree} alt="" className="w-[12em] md:w-[20em]" />
+              <div className="flex justify-center items-center pt-2">
+                <img src={barthree} alt="" className="w-[12em] md:w-[18em]" />
               </div>
             </div>
-          </div>
 
-          {/* Form Container */}
-          <div className="flex flex-col items-start gap-4 md:gap-5 mb-0 w-full md:w-[746px]">
+            {/* Form Container */}
+            <div className="flex flex-col items-start gap-4 md:gap-5 mb-0 w-full">
             {/* Top 3-Column Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 w-full">
               {/* Column 1: Make & Year Of Manufacture */}
@@ -854,7 +853,7 @@ const AddVehicleDetails = () => {
             <button
               onClick={handleNext}
               disabled={isLoading || isVehicleTypesLoading || !hasVehicleTypes}
-              className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize transition-colors duration-200 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize transition-colors duration-200 disabled:cursor-not-allowed"
               style={{
                 background: (isLoading || isVehicleTypesLoading || !hasVehicleTypes) ? '#61CB0866' : '#61CB08',
                 color: '#000B00',
@@ -874,9 +873,13 @@ const AddVehicleDetails = () => {
             >
               {isLoading ? 'Submitting...' : 'Next'}
             </button>
+
+            {/* Logout Button below Next */}
+            <LogoutButton onClick={handleLogout} />
           </div>
         </div>
       </div>
+    </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-md">

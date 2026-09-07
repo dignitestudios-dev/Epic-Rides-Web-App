@@ -8,6 +8,7 @@ import { ErrorToast } from '../../components/global/Toaster';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, clearAllSteps, isStepCompleted, getFirstIncompleteStep } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
@@ -538,37 +539,35 @@ const LicenseInformation = () => {
       <SignupSidebar currentStep={2} />
 
       {/* Main Content */}
-      {/* <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto pt-24 md:pt-0 pb-8"> */}
-              <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
+          <div className="w-full max-w-md my-auto flex flex-col items-center">
+            {/* Header */}
+            <div className="text-center mb-5 md:mb-6">
+              <h1
+                className="font-semibold mb-2 leading-tight text-xl md:text-[28px]"
+                style={{
+                  fontFamily: 'Poppins',
+                  color: '#FFFFFF',
+                  letterSpacing: '-0.5px'
+                }}
+              >
+                Upload Drivers License
+              </h1>
+              <p
+                className="leading-tight text-xs md:text-sm"
+                style={{
+                  fontFamily: 'Poppins',
+                  color: '#E6E6E6',
+                  fontWeight: 400
+                }}
+              >
+                Please enter your license details to continue.
+              </p>
+            </div>
 
-        <div className="w-full max-w-[calc(100%-2rem)] md:!w-[75em] flex flex-col items-center justify-start md:pr-[0em] py-6 md:py-8 px-4 md:px-0">
-          {/* Header */}
-          {/* Header */}
-          <div className="text-center mb-5 md:mb-6">
-            <h1
-              className="font-semibold mb-2 leading-tight text-xl md:text-[28px]"
-              style={{
-                fontFamily: 'Poppins',
-                color: '#FFFFFF',
-                letterSpacing: '-0.5px'
-              }}
-            >
-              Upload Drivers License
-            </h1>
-            <p
-              className="leading-tight text-xs md:text-sm"
-              style={{
-                fontFamily: 'Poppins',
-                color: '#E6E6E6',
-                fontWeight: 400
-              }}
-            >
-              Please enter your license details to continue.
-            </p>
-          </div>
-
-          {/* Form Container */}
-          <div className="w-full max-w-md space-y-3 md:space-y-4 md:pr-2">
+            {/* Form Container */}
+            <div className="w-full space-y-3 md:space-y-4">
             {/* Upload Front Image */}
             <div className="space-y-1.5 md:space-y-2">
               <label
@@ -860,7 +859,7 @@ const LicenseInformation = () => {
               <button
                 onClick={handleNext}
                 disabled={isLoading}
-                className="w-full py-2.5 rounded-lg font-semibold transition-colors duration-200 disabled:cursor-not-allowed"
+                className="w-full py-2.5 rounded-xl font-semibold transition-colors duration-200 disabled:cursor-not-allowed"
                 style={{
                   background: isLoading ? '#61CB0866' : '#61CB08',
                   color: '#000B00',
@@ -884,10 +883,14 @@ const LicenseInformation = () => {
               >
                 {isLoading ? 'Uploading...' : 'Next'}
               </button>
+
+              {/* Logout Button below Next */}
+              <LogoutButton onClick={handleLogout} className="mt-3 !rounded-lg !py-2.5 !text-[13px]" />
             </div>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Logout Modal */}
       <LogoutModal

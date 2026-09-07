@@ -55,8 +55,8 @@ const SignupSidebar = ({ currentStep = 1 }) => {
   return (
     <>
       {/* Mobile Progress Bar */}
-      <div className="mobile-signup-sidebar md:hidden fixed top-0 left-0 right-0 z-50 px-4 py-4 bg-black/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between w-full max-w-full overflow-x-auto pb-[1em]">
+      <div className="mobile-signup-sidebar lg:hidden fixed top-0 left-0 right-0 z-50 px-4 py-3 bg-black/40 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between w-full max-w-full overflow-x-auto pb-1">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.number;
             const isCompleted = currentStep > step.number;
@@ -64,12 +64,12 @@ const SignupSidebar = ({ currentStep = 1 }) => {
 
             return (
               <React.Fragment key={step.key}>
-                <div className="flex flex-col items-center flex-shrink-0" style={{ minWidth: '100px' }}>
+                <div className="flex flex-col items-center flex-shrink-0" style={{ minWidth: '90px' }}>
                   <div
                     className="flex items-center justify-center rounded-full font-poppins font-semibold text-sm text-white transition-all duration-200"
                     style={{
-                      width: isActive || isCompleted ? '32px' : '28px',
-                      height: isActive || isCompleted ? '32px' : '28px',
+                      width: isActive || isCompleted ? '30px' : '26px',
+                      height: isActive || isCompleted ? '30px' : '26px',
                       background:
                         isActive || isCompleted ? '#61CB08' : 'rgba(255, 255, 255, 0.3)',
                       border: isActive || isCompleted ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
@@ -78,10 +78,10 @@ const SignupSidebar = ({ currentStep = 1 }) => {
                     {step.number}
                   </div>
                   <span
-                    className="font-poppins font-normal text-[10px] text-center mt-1.5 pt-1 whitespace-nowrap"
+                    className="font-poppins font-normal text-[10px] text-center mt-1 whitespace-nowrap"
                     style={{
                       color: isActive || isCompleted ? '#61CB08' : 'rgba(255, 255, 255, 0.6)',
-                      maxWidth: '100px',
+                      maxWidth: '90px',
                     }}
                   >
                     {step.name}
@@ -92,8 +92,8 @@ const SignupSidebar = ({ currentStep = 1 }) => {
                     className="flex-1 h-0.5 mx-1 transition-all duration-200"
                     style={{
                       background: isCompleted ? '#61CB08' : 'rgba(255, 255, 255, 0.3)',
-                      minWidth: '20px',
-                      maxWidth: '40px',
+                      minWidth: '16px',
+                      maxWidth: '36px',
                     }}
                   />
                 )}
@@ -105,17 +105,18 @@ const SignupSidebar = ({ currentStep = 1 }) => {
 
       {/* Desktop Sidebar */}
       <div
-        className="desktop-signup-sidebar absolute left-5 top-1/2 -translate-y-1/2 rounded-2xl md:block hidden"
+        className="desktop-signup-sidebar hidden lg:flex fixed left-5 xl:left-8 top-1/2 -translate-y-1/2 rounded-2xl flex-col justify-center items-center z-30"
         style={{
           width: '380px',
           height: '720px',
+          maxHeight: '92vh',
           background: 'rgba(239, 239, 239, 0.1)',
           border: '0.8px solid #CACACA',
           backdropFilter: 'none',
           WebkitBackdropFilter: 'none',
         }}
       >
-        <div className="absolute top-44 left-10 w-60 space-y-10">
+        <div className="w-60 space-y-10">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.number;
             const isCompleted = currentStep > step.number;
@@ -159,23 +160,6 @@ const SignupSidebar = ({ currentStep = 1 }) => {
           })}
         </div>
       </div>
-
-      <style>
-        {`
-          @media (width: 768px) and (height: 1024px),
-            (width: 810px) and (height: 1080px),
-            (width: 1024px) and (height: 768px),
-            (width: 1024px) and (height: 1366px),
-            (width: 1140px) and (height: 712px) {
-            .mobile-signup-sidebar {
-              display: block !important;
-            }
-            .desktop-signup-sidebar {
-              display: none !important;
-            }
-          }
-        `}
-      </style>
     </>
   );
 };

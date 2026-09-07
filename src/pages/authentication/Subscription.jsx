@@ -7,6 +7,7 @@ import axios from '../../axios';
 import { ErrorToast, SuccessToast } from '../../components/global/Toaster';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
 import {
@@ -334,7 +335,7 @@ const Subscription = () => {
   console.log(getCurrentPlan(),"getCurrentPlan")
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
+    <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
       {/* Top Right Logout Button */}
       <TopRightLogoutButton onClick={handleLogout} />
 
@@ -342,12 +343,13 @@ const Subscription = () => {
       <SignupBackground />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-y-auto">
-        <div className="flex flex-col items-center gap-8 px-8 py-12 max-w-[1200px] w-full">
-          {/* Header */}
-          <h2 className="font-poppins font-bold text-4xl text-center text-white m-0">
-            Subscription Plans
-          </h2>
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-start">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-16 sm:pt-20 lg:pt-14 pb-16 px-4 sm:px-8 max-w-[1200px]">
+          <div className="w-full my-auto flex flex-col items-center gap-6 md:gap-8">
+            {/* Header */}
+            <h2 className="font-poppins font-bold text-2xl sm:text-3xl md:text-4xl text-center text-white m-0">
+              Subscription Plans
+            </h2>
 
           {/* Show subscription card if user has active subscription */}
           {isLoadingSubscription ? (
@@ -408,6 +410,7 @@ const Subscription = () => {
                 );
               })()}
 
+              {/* Cancel Subscription Button */}
               <button
                 onClick={handleCancelSubscriptionClick}
                 disabled={isCanceling || subscriptionDetails?.cancelAtPeriodEnd}
@@ -425,64 +428,76 @@ const Subscription = () => {
                 <p className="font-poppins font-normal text-base text-white">Loading plans...</p>
               </div>
             ) : plans.length > 0 ? (
-              <div className="flex flex-row flex-wrap justify-center items-start gap-8 w-full">
-                {plans.map((plan) => {
-                  const { price, currencySymbol } = formatPrice(plan.amount, plan.currency);
-                  const intervalText = plan.interval === 'month' ? 'month' : plan.interval;
+              <div className="flex flex-col items-center w-full gap-8">
+                <div className="flex flex-row flex-wrap justify-center items-start gap-8 w-full">
+                  {plans.map((plan) => {
+                    const { price, currencySymbol } = formatPrice(plan.amount, plan.currency);
+                    const intervalText = plan.interval === 'month' ? 'month' : plan.interval;
 
-                  return (
-                    <div
-                      key={plan.id}
-                      className="rounded-xl p-6 w-full max-w-[27em]"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                        backdropFilter: 'blur(42px)',
-                        border: '1px solid rgba(97, 203, 8, 0.32)'
-                      }}
-                    >
-                      {/* Plan Name */}
-                      <h3 className="font-poppins font-semibold text-xl text-white text-center mb-4">
-                        {plan.product?.name || plan.nickname || 'Plan'}
-                      </h3>
-
-                      {/* Plan Description */}
-                      {plan.product?.description && (
-                        <p className="font-poppins font-normal text-sm text-[#E6E6E6] text-center mb-4">
-                          {plan.product.description}
-                        </p>
-                      )}
-
-                      {/* Price */}
-                      <div className="flex items-baseline justify-center gap-1 mb-6">
-                        <span className="font-poppins font-normal text-lg text-white">{currencySymbol}</span>
-                        <span className="font-poppins font-bold text-6xl text-[#61CB08]">{price}</span>
-                        {plan.interval && (
-                          <span className="font-poppins font-normal text-lg text-white">/{intervalText}</span>
-                        )}
-                      </div>
-
-                      {/* Buy Plan Button */}
-                      <button
-                        onClick={() => handleBuyPlan(plan)}
-                        disabled={purchasingPlanId === plan.id}
-                        className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-[#000B00] hover:bg-[#55b307] disabled:opacity-50 disabled:cursor-not-allowed"
+                    return (
+                      <div
+                        key={plan.id}
+                        className="rounded-xl p-6 w-full max-w-[27em]"
+                        style={{
+                          background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                          backdropFilter: 'blur(42px)',
+                          border: '1px solid rgba(97, 203, 8, 0.32)'
+                        }}
                       >
-                        {purchasingPlanId === plan.id ? 'Processing...' : 'Buy Plan'}
-                      </button>
-                    </div>
-                  );
-                })}
+                        {/* Plan Name */}
+                        <h3 className="font-poppins font-semibold text-xl text-white text-center mb-4">
+                          {plan.product?.name || plan.nickname || 'Plan'}
+                        </h3>
+
+                        {/* Plan Description */}
+                        {plan.product?.description && (
+                          <p className="font-poppins font-normal text-sm text-[#E6E6E6] text-center mb-4">
+                            {plan.product.description}
+                          </p>
+                        )}
+
+                        {/* Price */}
+                        <div className="flex items-baseline justify-center gap-1 mb-6">
+                          <span className="font-poppins font-normal text-lg text-white">{currencySymbol}</span>
+                          <span className="font-poppins font-bold text-6xl text-[#61CB08]">{price}</span>
+                          {plan.interval && (
+                            <span className="font-poppins font-normal text-lg text-white">/{intervalText}</span>
+                          )}
+                        </div>
+
+                        {/* Buy Plan Button */}
+                        <button
+                          onClick={() => handleBuyPlan(plan)}
+                          disabled={purchasingPlanId === plan.id}
+                          className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-[#000B00] hover:bg-[#55b307] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {purchasingPlanId === plan.id ? 'Processing...' : 'Buy Plan'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Logout Button below Plans */}
+                <div className="w-full max-w-[27em] flex justify-center">
+                  <LogoutButton onClick={handleLogout} className="!rounded-xl" />
+                </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-[27em]">
                 <p className="font-poppins font-normal text-base text-white">No plans available</p>
+                <LogoutButton onClick={handleLogout} className="!rounded-xl" />
               </div>
             )
-          ) : null}
+          ) : (
+            /* Logout Button when subscription is active, below cancel button */
+            <div className="w-full max-w-[27em] flex justify-center mt-2">
+              <LogoutButton onClick={handleLogout} className="!rounded-xl" />
+            </div>
+          )}
         </div>
-
-
       </div>
+    </div>
 
       {/* Logout Modal */}
       <LogoutModal

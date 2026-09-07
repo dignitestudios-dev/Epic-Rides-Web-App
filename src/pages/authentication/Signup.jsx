@@ -11,6 +11,7 @@ import PrivacyPolicyModal from "../../components/global/PrivacyPolicyModal";
 import SignupSidebar from "../../components/authentication/SignupSidebar";
 import SignupBackground from "../../components/authentication/SignupBackground";
 import LogoutModal from "../../components/global/LogoutModal";
+import LogoutButton from "../../components/global/LogoutButton";
 import {
   markStepCompleted,
   STEPS,
@@ -840,18 +841,19 @@ const SignupPage = () => {
       <SignupSidebar currentStep={1} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-start justify-center md:justify-end overflow-y-auto min-[300px]:max-[500px]:pt-[8em] md:pt-0 min-[768px]:max-[768px]:pt-[10em] pb-8">
-        <div className="w-full max-w-[calc(100%-2rem)] md:!w-[75em] flex flex-col items-center justify-center md:pr-[0em] px-4 md:px-0">
-          {/* Header */}
-          <div className="text-center mb-8 md:mb-[1em] mt-[2em] md:mt-0">
-            <h1
-              className="font-semibold mb-3 md:mb-4 leading-tight text-2xl md:text-[39px] mt-4"
-              style={{
-                fontFamily: "Poppins",
-                color: "#FFFFFF",
-                letterSpacing: "-0.5px",
-              }}
-            >
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
+          <div className="w-full max-w-md my-auto flex flex-col items-center">
+            {/* Header */}
+            <div className="text-center mb-6 md:mb-8">
+              <h1
+                className="font-semibold mb-2 leading-tight text-2xl md:text-[34px]"
+                style={{
+                  fontFamily: "Poppins",
+                  color: "#FFFFFF",
+                  letterSpacing: "-0.5px",
+                }}
+              >
               Create Profile
             </h1>
             <p
@@ -1483,7 +1485,7 @@ const SignupPage = () => {
             <button
               onClick={handleNext}
               disabled={isLoading}
-              className="w-full py-2.5 md:py-3 rounded-[14px] font-semibold mt-6 md:mt-8 transition-colors duration-200 disabled:cursor-not-allowed text-sm md:text-sm"
+              className="w-full py-2.5 md:py-3 rounded-xl font-semibold mt-6 md:mt-8 transition-colors duration-200 disabled:cursor-not-allowed text-sm md:text-sm"
               style={{
                 background: isLoading ? "#61CB0866" : "#61CB08",
                 color: "#000B00",
@@ -1506,6 +1508,9 @@ const SignupPage = () => {
             >
               {isLoading ? "Processing..." : "Next"}
             </button>
+
+            {/* Logout Button below Next */}
+            <LogoutButton onClick={handleLogout} className="mt-3" />
 
             {/* Terms Text */}
             <div
@@ -1545,6 +1550,7 @@ const SignupPage = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Terms & Conditions Modal */}

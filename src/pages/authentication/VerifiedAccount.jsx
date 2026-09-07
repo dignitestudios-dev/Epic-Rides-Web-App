@@ -7,6 +7,7 @@ import axios from '../../axios';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
+import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import {
   STEPS,
@@ -532,7 +533,7 @@ const VerifiedAccount = () => {
   }, [user, stepToComplete, formData, licenseData, vehicleData, insuranceData, vehicleDetails, navigate, statusFromState]);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
+    <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
       {/* Top Right Logout Button */}
       <TopRightLogoutButton onClick={handleLogout} />
 
@@ -543,9 +544,10 @@ const VerifiedAccount = () => {
       <SignupSidebar currentStep={5} />
 
       {/* Main Content */}
-      <div className="absolute inset-0 flex items-center justify-end overflow-y-auto max-h-[50em]">
-        <div className="verified-content-wrapper !w-[75em] flex flex-col items-center justify-center pr-[0em] py-8">
-          {/* Request Submitted State */}
+      <div className="absolute inset-0 overflow-y-auto overflow-x-hidden flex justify-center lg:justify-end">
+        <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
+          <div className="w-full max-w-lg my-auto flex flex-col items-center">
+            {/* Request Submitted State */}
           {(accountStatus === 'submitted' || accountStatus === 'pending') && (
             <div className="flex flex-col items-center justify-center gap-8">
               {/* Spinner */}
@@ -617,7 +619,7 @@ const VerifiedAccount = () => {
                 <div className="flex flex-col gap-3 mt-4" style={{ width: '360px' }}>
                   <button
                     onClick={handleResubmit}
-                    className="w-full py-3 rounded-[14px] font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-white hover:bg-[#55b307]"
+                    className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-white hover:bg-[#55b307]"
                   >
                     resubmit
                   </button>
@@ -625,17 +627,15 @@ const VerifiedAccount = () => {
               )}
             </div>
           )}
+
+          {/* Prominent Log Out button below content */}
+          <div className="flex flex-col gap-3 mt-4 w-full max-w-[360px]">
+            <LogoutButton onClick={handleLogout} />
+          </div>
         </div>
       </div>
-      <style>
-        {`
-          @media (width: 1280px) and (height: 720px) {
-            .verified-content-wrapper {
-              padding-left: 20em;
-            }
-          }
-        `}
-      </style>
+    </div>
+
       {/* Logout Modal */}
       <LogoutModal
         isOpen={showLogoutModal}
