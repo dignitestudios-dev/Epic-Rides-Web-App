@@ -9,6 +9,19 @@ input[type="date"] {
   position: relative;
 }
 
+input[type="date"].empty-date-input {
+  color: transparent !important;
+}
+
+input[type="date"].empty-date-input::-webkit-datetime-edit,
+input[type="date"].empty-date-input::-webkit-datetime-edit-fields-wrapper,
+input[type="date"].empty-date-input::-webkit-datetime-edit-text,
+input[type="date"].empty-date-input::-webkit-datetime-edit-month-field,
+input[type="date"].empty-date-input::-webkit-datetime-edit-day-field,
+input[type="date"].empty-date-input::-webkit-datetime-edit-year-field {
+  color: transparent !important;
+}
+
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-clear-button {
   display: none;

@@ -816,8 +816,10 @@ const LicenseInformation = () => {
                   value={licenseData.expiryDate}
                   onChange={handleLicenseInputChange}
                   min={getMinExpiryDate()}
-                  placeholder="Enter your date"
-                  className="w-full px-3 pr-10 py-2.5 rounded-lg outline-none placeholder:text-[#808080]"
+                  placeholder="MM/DD/YYYY"
+                  className={`w-full px-3 pr-10 py-2.5 rounded-lg outline-none font-poppins text-[13px] ${
+                    !licenseData.expiryDate ? 'empty-date-input' : ''
+                  }`}
                   style={{
                     background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
                     backdropFilter: 'blur(42px)',
@@ -831,6 +833,11 @@ const LicenseInformation = () => {
                     transition: 'border-color 0.2s'
                   }}
                 />
+                {!licenseData.expiryDate && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#808080] font-poppins text-[13px] select-none">
+                    MM/DD/YYYY
+                  </span>
+                )}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/80 flex items-center justify-center">
                   <Calendar size={18} />
                 </div>
