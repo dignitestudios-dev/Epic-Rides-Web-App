@@ -82,7 +82,13 @@ export const formatPhoneByCountry = (value, country = DEFAULT_COUNTRY) => {
 
 export const getCountryPhonePlaceholder = (country = DEFAULT_COUNTRY) => {
   const countryObj = typeof country === 'string' ? findCountryByCode(country) : country || DEFAULT_COUNTRY;
-  return countryObj?.example || '(123) 456-7890';
+  if (countryObj?.mask) {
+    return countryObj.mask.replace(/#/g, '0');
+  }
+  if (countryObj?.example) {
+    return countryObj.example.replace(/\d/g, '0');
+  }
+  return '(000) 000-0000';
 };
 
 export const getCountryMaxDigits = (country = DEFAULT_COUNTRY) => {
