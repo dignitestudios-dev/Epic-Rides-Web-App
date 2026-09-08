@@ -9,7 +9,7 @@ import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
-import { hydrateAuthFromCookies } from '../../redux/slices/auth.slice';
+import { hydrateAuthFromCookies, getAccountStatus } from '../../redux/slices/auth.slice';
 import {
   STEPS,
   arePreviousStepsCompleted,
@@ -139,6 +139,14 @@ const Subscription = () => {
     fetchPlans();
   }, []);
 
+  // Fetch latest account status immediately on mount
+  useEffect(() => {
+    const currentToken = Cookies.get('token');
+    if (currentToken) {
+      dispatch(getAccountStatus());
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     if (!user && authToken) {
       dispatch(hydrateAuthFromCookies());
@@ -155,6 +163,7 @@ const Subscription = () => {
     // 1. Rejection takes ABSOLUTE PRIORITY over subscription
     if (
       accountStatus === 'rejected' ||
+      user?.accountStatus === 'rejected' ||
       hasRejectedDocuments(user, rejectedDocuments)
     ) {
       navigate('/verified-account', {

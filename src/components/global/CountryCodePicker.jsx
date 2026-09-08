@@ -142,6 +142,9 @@ export default function CountryCodePicker({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search country or code..."
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full h-9 pl-8 pr-8 bg-white/10 rounded-lg font-poppins text-xs text-white placeholder:text-white/40 outline-none border border-white/10 focus:border-[#61CB08] transition-colors"
               />
               {searchQuery.length > 0 && (

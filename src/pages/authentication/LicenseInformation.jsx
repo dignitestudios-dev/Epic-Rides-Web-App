@@ -893,6 +893,9 @@ const LicenseInformation = () => {
                 inputMode="text"
                 pattern="^[A-Z0-9]{6,15}$"
                 maxLength={15}
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full px-3 py-2.5 rounded-lg outline-none placeholder:text-[#808080]"
                 style={{
                   background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',

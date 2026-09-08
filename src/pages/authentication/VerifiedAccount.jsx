@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Cookies from 'js-cookie';
 import { Check, X } from 'lucide-react';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
@@ -14,6 +14,7 @@ import {
 } from '../../utils/stepValidation';
 import { hasActiveSubscription, isDocumentRoute, areAllDocumentsApproved } from '../../utils/onboardingRedirect';
 import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
+import { getAccountStatus } from '../../redux/slices/auth.slice';
 
 const DOCUMENT_KEY_LABELS = {
   driverLicense: 'Driver License',
@@ -50,6 +51,7 @@ const prettifyRejectReason = (reason, key) => {
 const VerifiedAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const {
     user,
     accountStatus: reduxAccountStatus,
@@ -63,6 +65,14 @@ const VerifiedAccount = () => {
   const rejectedDocsFromState = location.state?.rejectedDocuments;
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Fetch latest account status immediately on mount
+  useEffect(() => {
+    const currentToken = Cookies.get('token');
+    if (currentToken) {
+      dispatch(getAccountStatus());
+    }
+  }, [dispatch]);
 
   // Dynamic resolved rejected documents list from Redux polling + user object + route state
   const resolvedRejectedDocs = React.useMemo(() => {

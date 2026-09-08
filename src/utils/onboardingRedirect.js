@@ -127,13 +127,26 @@ const getFirstIncompleteDocumentRoute = (user) => {
   return null;
 };
 
+const normalizeDocumentKey = (key) => {
+  if (!key) return null;
+  const s = String(key).trim();
+  if (DOCUMENT_KEYS.includes(s)) return s;
+  const clean = s.toLowerCase().replace(/[-_]/g, '');
+  if (clean.includes('license') || clean.includes('driver')) return 'driverLicense';
+  if (clean.includes('registration') || clean.includes('vehiclereg')) return 'vehicleRegistration';
+  if (clean.includes('insurance')) return 'insurance';
+  if (clean.includes('vehicledetail') || clean.includes('vehicle')) return 'vehicleDetails';
+  return s;
+};
+
 /** Build rejected list for verified-account merging user object and API rejected lists. */
 export const buildRejectedDocumentsPayload = (user, rejectedDocuments = []) => {
   const rejectedMap = new Map();
 
   if (Array.isArray(rejectedDocuments)) {
     rejectedDocuments.forEach((d) => {
-      const key = typeof d === 'string' ? d : d?.key;
+      const rawKey = typeof d === 'string' ? d : d?.key;
+      const key = normalizeDocumentKey(rawKey);
       if (key && DOCUMENT_KEYS.includes(key)) {
         rejectedMap.set(key, {
           key,
@@ -165,6 +178,7 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
     return true;
   }
   if (!user) return false;
+  if (user?.accountStatus === 'rejected') return true;
   return DOCUMENT_KEYS.some((key) => user[key]?.status === 'rejected');
 };
 
@@ -203,7 +217,11 @@ export const resolvePostLoginRoute = ({
   syncCompletedStepsFromUser(user, isOnboarded);
 
   // 1. Rejected profile -> rejected summary on verified-account
-  if (accountStatus === 'rejected' || hasRejectedDocuments(user, rejectedDocuments)) {
+  if (
+    accountStatus === 'rejected' ||
+    user?.accountStatus === 'rejected' ||
+    hasRejectedDocuments(user, rejectedDocuments)
+  ) {
     syncCompletedStepsFromUser(user, isOnboarded);
     return {
       path: '/verified-account',

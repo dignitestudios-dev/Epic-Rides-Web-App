@@ -40,10 +40,52 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   -webkit-appearance: none;
 }
 
-/* Fix for macOS/iOS where misspelled words inside inputs revert to black text */
-input,
-textarea {
-  -webkit-text-fill-color: currentcolor;
+/* Ensure all inputs and textareas render white text and green caret by default */
+input:not([type="date"].empty-date-input),
+textarea,
+select {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #61cb08;
+}
+
+input:not([type="date"].empty-date-input):disabled,
+input:not([type="date"].empty-date-input):read-only {
+  -webkit-text-fill-color: #a3a3a3;
+  color: #a3a3a3;
+}
+
+/* Ensure placeholders maintain proper grey color */
+input::placeholder,
+textarea::placeholder {
+  color: #808080 !important;
+  -webkit-text-fill-color: #808080 !important;
+  opacity: 1;
+}
+
+/* Override spelling and grammar error highlighting across all browsers and engines (macOS, iOS, Android, Windows) */
+::spelling-error,
+*::spelling-error,
+input::spelling-error,
+textarea::spelling-error {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration-line: none !important;
+  background-color: transparent !important;
+}
+
+::grammar-error,
+*::grammar-error,
+input::grammar-error,
+textarea::grammar-error {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration-line: none !important;
+  background-color: transparent !important;
 }
 
 /* Prevent browser autofill from changing input background/text colors (global) */

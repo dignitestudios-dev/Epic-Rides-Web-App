@@ -1006,6 +1006,9 @@ const SignupPage = () => {
                   maxLength={NAME_MAX_LENGTH}
                   placeholder="First name"
                   autoComplete="given-name"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
                   style={{
                     background:
@@ -1052,6 +1055,9 @@ const SignupPage = () => {
                   maxLength={NAME_MAX_LENGTH}
                   placeholder="Last name"
                   autoComplete="family-name"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
                   style={{
                     background:
@@ -1115,6 +1121,9 @@ const SignupPage = () => {
                 onChange={handleInputChange}
                 maxLength={100}
                 placeholder="Enter email address"
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm"
                 style={{
                   background:
@@ -1202,6 +1211,9 @@ const SignupPage = () => {
                   maxLength={getCountryMaxFormattedLength(phoneCountry)}
                   disabled={!!phone}
                   readOnly={!!phone}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="flex-1 px-2 md:px-3 outline-none bg-transparent placeholder:text-[#a3a3a3] disabled:cursor-not-allowed text-xs md:text-sm"
                   style={{
                     fontFamily: "Poppins",
@@ -1245,6 +1257,9 @@ const SignupPage = () => {
                 onChange={handleInputChange}
                 placeholder="XXX-XX-XXXX"
                 maxLength={11}
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm"
                 style={{
                   background:
@@ -1289,6 +1304,9 @@ const SignupPage = () => {
                 type="text"
                 name="address"
                 defaultValue={formData.address}
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 onBlur={(e) => {
                   if (skipAddressBlurSanitizeRef.current) {
                     skipAddressBlurSanitizeRef.current = false;
@@ -1433,6 +1451,9 @@ const SignupPage = () => {
                   placeholder={addressAutofilled ? "City" : "Enter your city"}
                   maxLength={100}
                   autoComplete="off"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm disabled:cursor-not-allowed"
                   style={{
                     background:
@@ -1486,6 +1507,9 @@ const SignupPage = () => {
                   placeholder={addressAutofilled ? "State" : "Florida"}
                   maxLength={100}
                   autoComplete="off"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-3 py-2.5 md:py-3 rounded-xl outline-none placeholder:text-[#808080] text-sm md:text-sm disabled:cursor-not-allowed"
                   style={{
                     background:

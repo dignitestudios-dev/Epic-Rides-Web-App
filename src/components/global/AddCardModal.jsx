@@ -132,6 +132,9 @@ const AddCardModal = ({ isOpen, onClose, onSave, editingCard = null }) => {
                 value={formData.cardHolderName}
                 onChange={(e) => handleInputChange('cardHolderName', e.target.value)}
                 placeholder="Enter card holder name here"
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full px-4 py-3 rounded-xl font-poppins font-normal text-sm text-white placeholder-[#808080] border-none outline-none backdrop-blur-[42px]"
                 style={{
                   background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',
@@ -152,6 +155,9 @@ const AddCardModal = ({ isOpen, onClose, onSave, editingCard = null }) => {
                 onChange={(e) => handleInputChange('cardNumber', e.target.value)}
                 placeholder="Enter card number here"
                 maxLength={19}
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="w-full px-4 py-3 rounded-xl font-poppins font-normal text-sm text-white placeholder-[#808080] border-none outline-none backdrop-blur-[42px]"
                 style={{
                   background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',
@@ -174,6 +180,9 @@ const AddCardModal = ({ isOpen, onClose, onSave, editingCard = null }) => {
                   onChange={(e) => handleInputChange('expiry', e.target.value)}
                   placeholder="mm/yy"
                   maxLength={5}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-4 py-3 rounded-xl font-poppins font-normal text-sm text-white placeholder-[#808080] border-none outline-none backdrop-blur-[42px]"
                   style={{
                     background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',
@@ -194,6 +203,9 @@ const AddCardModal = ({ isOpen, onClose, onSave, editingCard = null }) => {
                   onChange={(e) => handleInputChange('cvc', e.target.value)}
                   placeholder="XXX"
                   maxLength={3}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  data-gramm="false"
                   className="w-full px-4 py-3 rounded-xl font-poppins font-normal text-sm text-white placeholder-[#808080] border-none outline-none backdrop-blur-[42px]"
                   style={{
                     background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',

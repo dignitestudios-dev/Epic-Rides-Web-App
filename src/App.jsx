@@ -22,37 +22,47 @@ import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
 import { getAccountStatus, hydrateAuthFromCookies } from "./redux/slices/auth.slice";
+import { areAllDocumentsApproved } from "./utils/onboardingRedirect";
 import { loginbackgroundimage } from "./assets/export";
 
 function App() {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { isAccountStatusInitialized, accountStatus } = useSelector((state) => state.auth);
+  const { isAccountStatusInitialized, accountStatus, user } = useSelector((state) => state.auth);
   const token = Cookies.get("token");
 
-  // Initial load: Hydrate auth and fetch account status ONCE on application start / reload
+  // Fetch latest account status on initial mount and on every route change
   useEffect(() => {
     dispatch(hydrateAuthFromCookies());
     const authToken = Cookies.get("token");
     if (authToken) {
       dispatch(getAccountStatus());
     }
-  }, [dispatch]);
+  }, [dispatch, location.pathname]);
 
-  // Scoped background polling: ONLY active on /subscription and /verified-account, and ONLY if NOT approved
+  // Background polling: Active on /subscription and /verified-account every 10 seconds UNLESS profile is approved
   useEffect(() => {
-    const authToken = Cookies.get("token");
     const isPollingRoute =
       location.pathname === "/subscription" ||
       location.pathname === "/verified-account";
 
-    if (authToken && isPollingRoute && accountStatus !== "approved") {
-      const intervalId = setInterval(() => {
+    const isApproved =
+      accountStatus === "approved" ||
+      user?.accountStatus === "approved" ||
+      (user && areAllDocumentsApproved(user));
+
+    // When profile is approved, polling does not run
+    if (!isPollingRoute || isApproved) return;
+
+    const intervalId = setInterval(() => {
+      const authToken = Cookies.get("token");
+      if (authToken) {
         dispatch(getAccountStatus());
-      }, 10000);
-      return () => clearInterval(intervalId);
-    }
-  }, [dispatch, location.pathname, accountStatus]);
+      }
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [dispatch, location.pathname, accountStatus, user]);
 
   // Show branded loading screen on initial load when token exists until status resolves
   if (token && !isAccountStatusInitialized) {

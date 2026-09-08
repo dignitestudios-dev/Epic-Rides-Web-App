@@ -175,6 +175,9 @@ export default function EpicRidesLogin() {
                 value={phoneNumber}
                 onChange={handlePhoneChange}
                 maxLength={getCountryMaxFormattedLength(selectedCountry)}
+                spellCheck={false}
+                autoCorrect="off"
+                data-gramm="false"
                 className="flex-1 min-w-0 h-11 rounded-xl font-poppins font-normal text-xs sm:text-sm outline-none px-3 sm:px-4 backdrop-blur-[42px] placeholder:text-[#808080]"
                 style={{
                   background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
