@@ -113,7 +113,9 @@ export default function Verification() {
 
   // Handle verify OTP
   const handleVerify = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
     const otpString = otp.join('');
     if (otpString.length === 6 && phoneNumber) {
       try {
@@ -121,8 +123,8 @@ export default function Verification() {
         const rawPhone = phoneNumber.replace(/\D/g, '');
         const cleanPhone = rawPhone.length === 10 ? `1${rawPhone}` : rawPhone;
         
-        // 1. Dispatch verify OTP action to obtain and store JWT token
-        await dispatch(
+        // 1. Dispatch verify OTP action to obtain and store JWT token & verify payload
+        const verifyResult = await dispatch(
           verifyOtp({ phone: cleanPhone, otp: otpString, role: 'driver' })
         ).unwrap();
 
@@ -131,25 +133,42 @@ export default function Verification() {
           localStorage.setItem('verifiedPhone', cleanPhone);
         }
 
-        // 2. Fetch authoritative account status from /api/auth/account-status
-        const statusResult = await dispatch(getAccountStatus()).unwrap();
-        console.log('=== Account Status After Verification ===', statusResult);
+        let routingData = verifyResult;
 
-        // 3. Resolve destination route strictly based on account-status response
+        // 2. Fetch authoritative account status from /api/auth/account-status if available
+        try {
+          const statusResult = await dispatch(getAccountStatus()).unwrap();
+          console.log('=== Account Status After Verification ===', statusResult);
+          if (
+            statusResult &&
+            (statusResult.user ||
+              statusResult.accountStatus !== undefined ||
+              statusResult.isOnboarded !== undefined)
+          ) {
+            routingData = statusResult;
+          }
+        } catch (statusError) {
+          console.warn(
+            'Account status API failed or returned 401, falling back to verify OTP data:',
+            statusError
+          );
+        }
+
+        // 3. Resolve destination route based on available authoritative data (account-status if succeeded, else verify OTP data)
         const { path, state } = resolvePostLoginRoute({
-          user: statusResult?.user,
-          accountStatus: statusResult?.accountStatus,
-          isOnboarded: statusResult?.isOnboarded,
-          stepToComplete: statusResult?.stepToComplete,
-          rejectedDocuments: statusResult?.rejectedDocuments || [],
-          pendingDocuments: statusResult?.pendingDocuments || [],
+          user: routingData?.user,
+          accountStatus: routingData?.accountStatus,
+          isOnboarded: routingData?.isOnboarded,
+          stepToComplete: routingData?.stepToComplete,
+          rejectedDocuments: routingData?.rejectedDocuments || [],
+          pendingDocuments: routingData?.pendingDocuments || [],
         });
 
-        console.log('✅ Account-status determined route:', path, state);
+        console.log('✅ Post-verification route determined:', path, state);
         navigate(path, state ? { state } : undefined);
       } catch (error) {
         // Error is already handled in axios interceptor and slice with ErrorToast
-        console.error('OTP verification or status fetch error:', error);
+        console.error('OTP verification error:', error);
         // Clear OTP on error
         setOtp(['', '', '', '', '', '']);
         if (otpInputRefs.current[0]) {

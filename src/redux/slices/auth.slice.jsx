@@ -70,15 +70,40 @@ export const verifyOtp = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "OTP verification failed");
       }
 
+      const userOnboardedStatus =
+        data?.isOnboarded !== undefined
+          ? Boolean(data.isOnboarded)
+          : data?.user?.isOnboarded !== undefined
+          ? Boolean(data.user.isOnboarded)
+          : false;
+
+      const userToStore = data?.user
+        ? {
+            ...data.user,
+            isOnboarded: userOnboardedStatus,
+          }
+        : null;
+
       // Store token on successful verification
       if (data?.token) {
         Cookies.set("token", data.token, { expires: 7 }); // 7 days expiry
+      }
+      if (userToStore) {
+        Cookies.set("user", JSON.stringify(userToStore), { expires: 7 });
       }
 
       SuccessToast(message || "OTP verified successfully");
       return {
         message: message || "OTP verified successfully",
         token: data?.token || null,
+        user: userToStore,
+        accountStatus: data?.accountStatus || data?.user?.accountStatus || null,
+        isOnboarded: userOnboardedStatus,
+        stepToComplete: data?.stepToComplete || null,
+        approvedDocuments: data?.approvedDocuments || [],
+        pendingDocuments: data?.pendingDocuments || [],
+        rejectedDocuments: data?.rejectedDocuments || [],
+        missingDocuments: data?.missingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "OTP verification failed";
@@ -615,6 +640,18 @@ const authSlice = createSlice({
         state.success = action.payload.message;
         state.token = action.payload.token || Cookies.get("token") || null;
         state.isAuthenticated = Boolean(state.token);
+        if (action.payload.user) {
+          state.user = action.payload.user;
+        }
+        if (action.payload.accountStatus !== null && action.payload.accountStatus !== undefined) {
+          state.accountStatus = action.payload.accountStatus;
+        }
+        state.isOnboarded = action.payload.isOnboarded !== undefined ? Boolean(action.payload.isOnboarded) : false;
+        state.stepToComplete = action.payload.stepToComplete || null;
+        state.approvedDocuments = action.payload.approvedDocuments || [];
+        state.pendingDocuments = action.payload.pendingDocuments || [];
+        state.rejectedDocuments = action.payload.rejectedDocuments || [];
+        state.missingDocuments = action.payload.missingDocuments || [];
         state.error = null;
       })
       .addCase(verifyOtp.rejected, (state, action) => {
