@@ -69,34 +69,64 @@ export default function Verification() {
     return '*** *** *890';
   };
 
+  // Handle OTP paste
+  const handlePaste = (index, e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData?.getData('text') || '';
+    const digitsOnly = pastedData.replace(/\D/g, '');
+    if (!digitsOnly) return;
+
+    const newOtp = [...otp];
+    const startIndex = digitsOnly.length >= 6 ? 0 : index;
+    const digitsToFill = digitsOnly.slice(0, 6 - startIndex).split('');
+
+    digitsToFill.forEach((digit, i) => {
+      if (startIndex + i < 6) {
+        newOtp[startIndex + i] = digit;
+      }
+    });
+
+    setOtp(newOtp);
+
+    // Focus the next empty input or the last filled input
+    const nextIndex = Math.min(startIndex + digitsToFill.length, 5);
+    if (otpInputRefs.current[nextIndex]) {
+      otpInputRefs.current[nextIndex].focus();
+    }
+  };
+
   // Handle OTP input change
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedOtp = value.slice(0, 6).split('');
+  const handleOtpChange = (index, rawValue) => {
+    const cleanDigits = rawValue.replace(/\D/g, '');
+
+    // Handle paste or multi-character autofill
+    if (cleanDigits.length > 1) {
       const newOtp = [...otp];
-      pastedOtp.forEach((digit, i) => {
-        if (index + i < 6 && /^\d$/.test(digit)) {
-          newOtp[index + i] = digit;
+      const startIndex = cleanDigits.length >= 6 ? 0 : index;
+      const digitsToFill = cleanDigits.slice(0, 6 - startIndex).split('');
+
+      digitsToFill.forEach((digit, i) => {
+        if (startIndex + i < 6) {
+          newOtp[startIndex + i] = digit;
         }
       });
+
       setOtp(newOtp);
-      // Focus next empty input
-      const nextIndex = Math.min(index + pastedOtp.length, 6);
+
+      const nextIndex = Math.min(startIndex + digitsToFill.length, 5);
       if (otpInputRefs.current[nextIndex]) {
         otpInputRefs.current[nextIndex].focus();
       }
       return;
     }
 
-    if (!/^\d$/.test(value) && value !== '') return;
-
+    // Single character or clear
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = cleanDigits;
     setOtp(newOtp);
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (cleanDigits && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
   };
@@ -326,8 +356,11 @@ export default function Verification() {
                 ref={(el) => (otpInputRefs.current[index] = el)}
                 type="text"
                 inputMode="numeric"
-                maxLength={1}
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                maxLength={6}
                 value={digit}
+                onFocus={(e) => e.target.select()}
+                onPaste={(e) => handlePaste(index, e)}
                 onChange={(e) => handleOtpChange(index, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl font-poppins font-semibold text-lg sm:text-2xl text-center text-white outline-none backdrop-blur-[42px] transition-colors focus:border-[#61CB08]"
