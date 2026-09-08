@@ -307,17 +307,17 @@ const VerifiedAccount = () => {
 
               {/* Message */}
               <p className="font-poppins font-normal text-base text-center text-[#E6E6E6] m-0 px-4 max-w-md">
-                Your profile is approved. You can now access your dashboard.
+                Your profile is approved. You can now view and manage your subscription.
               </p>
 
-              {/* Continue to Dashboard Button */}
+              {/* Continue to Subscription Button */}
               <div className="flex flex-col gap-3 mt-4 w-full max-w-[360px]">
                 <button
                   type="button"
-                  onClick={() => navigate('/app/dashboard')}
+                  onClick={() => navigate('/subscription')}
                   className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-[#000B00] hover:bg-[#55b307]"
                 >
-                  Continue to Dashboard
+                  Continue to Subscription
                 </button>
               </div>
             </div>

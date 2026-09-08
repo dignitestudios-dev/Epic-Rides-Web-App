@@ -20,6 +20,7 @@
     "crypto-js": "^4.2.0",
     "formik": "^2.4.6",
     "js-cookie": "^3.0.5",
+    "libphonenumber-js": "^1.13.12",
     "lucide-react": "^0.563.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

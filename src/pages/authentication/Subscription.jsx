@@ -174,15 +174,6 @@ const Subscription = () => {
       return;
     }
 
-    // 3. If approved and active subscription already exists -> go to dashboard
-    if (
-      (accountStatus === 'approved' || areAllDocumentsApproved(user)) &&
-      hasActiveSubscription(user)
-    ) {
-      navigate('/app/dashboard', { replace: true });
-      return;
-    }
-
     const fetchSubscriptionDetails = async () => {
       const driverId = resolveDriverId(user);
       const detailsPath = getSubscriptionDetailsPath(driverId);

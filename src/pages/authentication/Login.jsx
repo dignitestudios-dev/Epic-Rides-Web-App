@@ -3,11 +3,19 @@ import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { sendOtp, setPhone } from '../../redux/slices/auth.slice';
 import { loginbackgroundimage, logo } from '../../assets/export';
-import flagUs from '../../assets/login/flag-us-3310bc.png';
+import CountryCodePicker from '../../components/global/CountryCodePicker';
+import {
+  DEFAULT_COUNTRY,
+  formatPhoneByCountry,
+  getCountryPhonePlaceholder,
+  getCountryMaxDigits,
+  getCountryMaxFormattedLength,
+} from '../../data/countries';
 import Cookies from 'js-cookie';
 import { resolvePostLoginRoute } from '../../utils/onboardingRedirect';
 
 export default function EpicRidesLogin() {
+  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
   const [phoneNumber, setPhoneNumber] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -58,23 +66,17 @@ export default function EpicRidesLogin() {
     }
   }, [location.search]);
 
-  // Format phone number as (123) 456-1234
-  const formatPhoneNumber = (value) => {
-    const phoneNumber = value.replace(/\D/g, '');
-    const phoneNumberLength = phoneNumber.length;
-    if (phoneNumberLength < 4) {
-      return phoneNumber;
-    } else if (phoneNumberLength < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    } else {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
-    }
+  // Handle phone number input change with strict per-country mask formatting
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneByCountry(e.target.value, selectedCountry);
+    setPhoneNumber(formatted);
   };
 
-  // Handle phone number input change
-  const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setPhoneNumber(formatted);
+  const handleCountryChange = (country) => {
+    setSelectedCountry(country);
+    if (phoneNumber) {
+      setPhoneNumber(formatPhoneByCountry(phoneNumber, country));
+    }
   };
 
   // Get raw phone number (digits only) for validation
@@ -82,17 +84,20 @@ export default function EpicRidesLogin() {
     return phoneNumber.replace(/\D/g, '');
   };
 
-  // Check if phone number is valid (10 digits)
+  // Check if phone number is valid (matches required digits for selected country)
   const isValidPhoneNumber = () => {
-    return getRawPhoneNumber().length === 10;
+    const raw = getRawPhoneNumber();
+    const maxDigits = getCountryMaxDigits(selectedCountry);
+    return raw.length === maxDigits;
   };
 
   const handleContinue = async (e) => {
     e.preventDefault();
     const rawPhone = getRawPhoneNumber();
-    if (rawPhone.length === 10) {
+    if (isValidPhoneNumber()) {
       try {
-        const phoneWithCountryCode = `1${rawPhone}`;
+        const cleanDialCode = selectedCountry.dialCode.replace(/\D/g, '');
+        const phoneWithCountryCode = `${cleanDialCode}${rawPhone}`;
         
         // Dispatch send OTP action
         const result = await dispatch(
@@ -103,7 +108,11 @@ export default function EpicRidesLogin() {
         if (result?.phone) {
           dispatch(setPhone(phoneWithCountryCode));
           navigate('/verification', {
-            state: { phoneNumber: phoneWithCountryCode, fromLogin: true },
+            state: {
+              phoneNumber: phoneWithCountryCode,
+              selectedCountry,
+              fromLogin: true,
+            },
           });
         }
       } catch (error) {
@@ -153,32 +162,19 @@ export default function EpicRidesLogin() {
             </label>
 
             <div className="flex flex-row items-center gap-2 w-full">
-              {/* Country Code */}
-              <div 
-                className="w-[100px] sm:w-[110px] h-11 rounded-xl relative backdrop-blur-[42px] flex items-center justify-center gap-2 px-2 shrink-0"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
-                  border: '1px solid rgba(97, 203, 8, 0.32)',
-                  WebkitBackdropFilter: 'blur(42px)'
-                }}
-              >
-                <img 
-                  src={flagUs} 
-                  alt="US flag" 
-                  className="w-6 sm:w-7 h-4 rounded-sm object-cover"
-                />
-                <span className="font-poppins font-normal text-xs sm:text-sm text-white whitespace-nowrap">
-                  +1
-                </span>
-              </div>
+              {/* Country Code Picker */}
+              <CountryCodePicker
+                selectedCountry={selectedCountry}
+                onSelectCountry={handleCountryChange}
+              />
 
               {/* Phone Input */}
               <input
                 type="tel"
-                placeholder="Enter your phone number"
+                placeholder={getCountryPhonePlaceholder(selectedCountry)}
                 value={phoneNumber}
                 onChange={handlePhoneChange}
-                maxLength={14}
+                maxLength={getCountryMaxFormattedLength(selectedCountry)}
                 className="flex-1 min-w-0 h-11 rounded-xl font-poppins font-normal text-xs sm:text-sm outline-none px-3 sm:px-4 backdrop-blur-[42px] placeholder:text-[#808080]"
                 style={{
                   background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',

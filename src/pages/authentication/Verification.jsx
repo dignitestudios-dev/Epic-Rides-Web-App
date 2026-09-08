@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { verifyOtp, sendOtp } from '../../redux/slices/auth.slice';
+import { verifyOtp, sendOtp, getAccountStatus } from '../../redux/slices/auth.slice';
 import { loginbackgroundimage } from '../../assets/export';
 import { SuccessToast } from '../../components/global/Toaster';
 import NumberVerifiedModal from '../../components/global/NumberVerifiedModal';
@@ -15,7 +15,18 @@ export default function Verification() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { isLoading, phone, user: reduxUser, otpSent } = useSelector((state) => state.auth);
+  const {
+    isLoading,
+    phone,
+    user: reduxUser,
+    otpSent,
+    isOnboarded: reduxIsOnboarded,
+    accountStatus: reduxAccountStatus,
+    stepToComplete: reduxStepToComplete,
+    rejectedDocuments: reduxRejectedDocs,
+    pendingDocuments: reduxPendingDocs,
+    isAccountStatusInitialized,
+  } = useSelector((state) => state.auth);
   const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 digits OTP
   const [resendTimer, setResendTimer] = useState(60); // Start with 60 seconds
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -47,10 +58,13 @@ export default function Verification() {
   
   // Get masked phone number for display
   const getMaskedPhoneNumber = () => {
-    const raw = phoneNumber.replace(/\D/g, '');
-    const localNumber = raw.length === 11 && raw.startsWith('1') ? raw.slice(1) : raw;
-    if (localNumber.length === 10) {
-      return `*** *** *${localNumber.slice(-3)}`;
+    const raw = String(phoneNumber || '').replace(/\D/g, '');
+    if (raw.length >= 7) {
+      const last3 = raw.slice(-3);
+      return `*** *** *${last3}`;
+    }
+    if (raw.length >= 3) {
+      return `*** *** *${raw.slice(-3)}`;
     }
     return '*** *** *890';
   };
@@ -107,53 +121,35 @@ export default function Verification() {
         const rawPhone = phoneNumber.replace(/\D/g, '');
         const cleanPhone = rawPhone.length === 10 ? `1${rawPhone}` : rawPhone;
         
-        // Dispatch verify OTP action
-        const result = await dispatch(
+        // 1. Dispatch verify OTP action to obtain and store JWT token
+        await dispatch(
           verifyOtp({ phone: cleanPhone, otp: otpString, role: 'driver' })
         ).unwrap();
-        
-        // Debug: Log the result to check what we're getting
-        console.log('Verify OTP Result:', result);
-        console.log('stepToComplete:', result?.stepToComplete);
-        console.log('user:', result?.user);
-        
-        // If verification successful, check stepToComplete and user data
-        if (result?.message) {
-          // Store phone number in localStorage after successful verification
-          if (cleanPhone) {
-            localStorage.setItem('verifiedPhone', cleanPhone);
-          }
-          
-          // Get stepToComplete without trim if null/undefined
-          const stepToCompleteRaw = result?.stepToComplete;
-          const stepToComplete = stepToCompleteRaw ? stepToCompleteRaw.trim() : stepToCompleteRaw;
-          const userData = result?.user;
-          const rejectedDocuments = result?.rejectedDocuments || [];
-          const pendingDocuments =
-            result?.pendingDocuments || userData?.pendingDocuments || [];
-          
-          // Debug logs
-          console.log('=== Verify OTP Response ===');
-          console.log('stepToComplete (raw):', stepToCompleteRaw);
-          console.log('stepToComplete (processed):', stepToComplete);
-          console.log('rejectedDocuments:', rejectedDocuments);
-          console.log('pendingDocuments:', pendingDocuments);
-          console.log('userData:', userData);
-          
-          const { path, state } = resolvePostLoginRoute({
-            user: userData,
-            accountStatus: result?.accountStatus || userData?.accountStatus,
-            isOnboarded: result?.isOnboarded,
-            stepToComplete,
-            rejectedDocuments,
-            pendingDocuments,
-          });
-          console.log('✅ Post-login redirect:', path, state);
-          navigate(path, state ? { state } : undefined);
+
+        // Store phone number in localStorage after successful verification
+        if (cleanPhone) {
+          localStorage.setItem('verifiedPhone', cleanPhone);
         }
+
+        // 2. Fetch authoritative account status from /api/auth/account-status
+        const statusResult = await dispatch(getAccountStatus()).unwrap();
+        console.log('=== Account Status After Verification ===', statusResult);
+
+        // 3. Resolve destination route strictly based on account-status response
+        const { path, state } = resolvePostLoginRoute({
+          user: statusResult?.user,
+          accountStatus: statusResult?.accountStatus,
+          isOnboarded: statusResult?.isOnboarded,
+          stepToComplete: statusResult?.stepToComplete,
+          rejectedDocuments: statusResult?.rejectedDocuments || [],
+          pendingDocuments: statusResult?.pendingDocuments || [],
+        });
+
+        console.log('✅ Account-status determined route:', path, state);
+        navigate(path, state ? { state } : undefined);
       } catch (error) {
         // Error is already handled in axios interceptor and slice with ErrorToast
-        console.error('OTP verification error:', error);
+        console.error('OTP verification or status fetch error:', error);
         // Clear OTP on error
         setOtp(['', '', '', '', '', '']);
         if (otpInputRefs.current[0]) {
@@ -203,18 +199,23 @@ export default function Verification() {
   }, []);
 
   // Auth / Navigation Guard Effect:
-  // 1. If logged in, redirect to active onboarding step / dashboard
+  // 1. If already logged in and account status initialized, redirect to active onboarding step / subscription
   // 2. If not logged in and not arriving via "Continue with Phone Number", redirect to /
   useEffect(() => {
-    if (isLoggedIn) {
-      if (currentUser) {
+    if (isLoggedIn && isAccountStatusInitialized) {
+      const activeUser = reduxUser || currentUser;
+      if (activeUser) {
+        const resolvedIsOnboarded =
+          activeUser?.isOnboarded !== undefined
+            ? activeUser.isOnboarded
+            : reduxIsOnboarded;
         const { path, state: postLoginState } = resolvePostLoginRoute({
-          user: currentUser,
-          accountStatus: currentUser?.accountStatus,
-          isOnboarded: currentUser?.isOnboarded,
-          stepToComplete: currentUser?.stepToComplete,
-          rejectedDocuments: currentUser?.rejectedDocuments,
-          pendingDocuments: currentUser?.pendingDocuments,
+          user: activeUser,
+          accountStatus: reduxAccountStatus || activeUser?.accountStatus,
+          isOnboarded: resolvedIsOnboarded,
+          stepToComplete: reduxStepToComplete || activeUser?.stepToComplete,
+          rejectedDocuments: reduxRejectedDocs || activeUser?.rejectedDocuments || [],
+          pendingDocuments: reduxPendingDocs || activeUser?.pendingDocuments || [],
         });
         navigate(path, { replace: true, state: postLoginState });
       } else {
@@ -226,7 +227,20 @@ export default function Verification() {
     if (!phoneNumber || !fromLogin) {
       navigate('/', { replace: true });
     }
-  }, [isLoggedIn, currentUser, phoneNumber, fromLogin, navigate]);
+  }, [
+    isLoggedIn,
+    isAccountStatusInitialized,
+    reduxUser,
+    currentUser,
+    reduxAccountStatus,
+    reduxIsOnboarded,
+    reduxStepToComplete,
+    reduxRejectedDocs,
+    reduxPendingDocs,
+    phoneNumber,
+    fromLogin,
+    navigate,
+  ]);
 
   // Timer countdown effect
   useEffect(() => {

@@ -4,7 +4,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { onboard } from "../../redux/slices/auth.slice";
 import { Plus } from "lucide-react";
 import Cookies from "js-cookie";
-import flagUs from "../../assets/login/flag-us-3310bc.png";
+import {
+  extractCountryAndLocalNumber,
+  DEFAULT_COUNTRY,
+  formatPhoneByCountry,
+  getCountryPhonePlaceholder,
+  getCountryMaxFormattedLength,
+} from "../../data/countries";
 import { ErrorToast } from "../../components/global/Toaster";
 import TermsAndConditionsModal from "../../components/global/TermsAndConditionsModal";
 import PrivacyPolicyModal from "../../components/global/PrivacyPolicyModal";
@@ -25,6 +31,7 @@ import {
 } from "../../components/global/ImageFileInputs";
 import { loadGoogleMapsPlaces } from "../../utils/loadGoogleMapsPlaces";
 import TopRightLogoutButton from "../../components/global/TopRightLogoutButton";
+import { fetchUrlAsFile } from "../../utils/rejectedFlowPrefill";
 
 const NAME_MAX_LENGTH = 15;
 const NAME_ALPHA_REGEX = /^[A-Za-z]+$/;
@@ -236,7 +243,8 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { isLoading, phone } = useSelector((state) => state.auth);
+  const { isLoading, phone, user, isOnboarded } = useSelector((state) => state.auth);
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_COUNTRY);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -284,8 +292,6 @@ const SignupPage = () => {
     profilePicture: "",
   });
 
-  const { user } = useSelector((state) => state.auth);
-
   console.log(user, "userprofiledata");
 
   // Format phone number as (123) 456-7890
@@ -312,12 +318,15 @@ const SignupPage = () => {
     }
   }, [navigate]);
 
-  // Prevent going back to completed signup step via browser back button.
+  // Prevent going back to completed signup step via browser back button only if user is actually onboarded.
   React.useEffect(() => {
+    if (isOnboarded === false || user?.isOnboarded === false) {
+      return;
+    }
     if (isStepCompleted(STEPS.SIGNUP)) {
       navigate(getFirstIncompleteStep(), { replace: true });
     }
-  }, [navigate]);
+  }, [isOnboarded, user?.isOnboarded, navigate]);
 
   React.useEffect(() => {
     if (referredByFromQuery) {
@@ -325,18 +334,31 @@ const SignupPage = () => {
     }
   }, [referredByFromQuery]);
 
+  // Prefill existing user data if available from server (e.g. name, email, profile picture)
+  React.useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: prev.firstName || user.firstName || "",
+        lastName: prev.lastName || user.lastName || "",
+        email: prev.email || user.email || "",
+        address: prev.address || user.address || "",
+        city: prev.city || user.city || "",
+        state: prev.state || user.state || "",
+      }));
+      if (user.profilePicture && !profilePicturePreview) {
+        setProfilePicturePreview(user.profilePicture);
+      }
+    }
+  }, [user]);
+
   // Auto-fill phone number on component mount from Redux, user profile, or verifiedPhone in localStorage
   React.useEffect(() => {
     const p = phone || user?.phone || localStorage.getItem("verifiedPhone");
     if (p) {
-      // Get raw phone number (digits only)
-      const rawPhone = String(p).replace(/\D/g, "");
-      const localPhone =
-        rawPhone.length === 11 && rawPhone.startsWith("1")
-          ? rawPhone.slice(1)
-          : rawPhone;
-      // Format it and set in formData
-      const formatted = formatPhoneNumber(localPhone);
+      const { country, localNumber } = extractCountryAndLocalNumber(p);
+      setPhoneCountry(country);
+      const formatted = formatPhoneByCountry(localNumber, country);
       setFormData((prev) => ({
         ...prev,
         phone: formatted,
@@ -767,7 +789,7 @@ const SignupPage = () => {
     const isAddressValid = validateField("address", sanitizedAddress);
     const isCityValid = validateField("city", formData.city);
     const isStateValid = validateField("state", formData.state);
-    const hasProfilePicture = Boolean(profilePicture);
+    const hasProfilePicture = Boolean(profilePicture || profilePicturePreview || user?.profilePicture);
     if (!hasProfilePicture) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -791,11 +813,21 @@ const SignupPage = () => {
     }
 
     try {
+      let fPic = profilePicture;
+      if (!fPic && profilePicturePreview && /^https?:\/\//i.test(String(profilePicturePreview))) {
+        fPic = await fetchUrlAsFile(profilePicturePreview, "profile-picture");
+      }
+      if (!fPic && profilePicturePreview && String(profilePicturePreview).startsWith("data:")) {
+        const res = await fetch(profilePicturePreview);
+        const blob = await res.blob();
+        fPic = new File([blob], "profile-picture.jpg", { type: blob.type || "image/jpeg" });
+      }
+
       // Dispatch onboard action with form data
       const result = await dispatch(
         onboard({
           role: "driver",
-          file: profilePicture,
+          file: fPic,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email.trim(),
@@ -807,8 +839,11 @@ const SignupPage = () => {
             ? "Florida"
             : formData.state.trim(),
           phone: (() => {
+            const raw = phone || user?.phone || localStorage.getItem("verifiedPhone");
+            if (raw) return String(raw).replace(/\D/g, "");
             const cleanPhone = formData.phone.replace(/\D/g, "");
-            return cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
+            const dialDigits = phoneCountry.dialCode.replace(/\D/g, "");
+            return cleanPhone.startsWith(dialDigits) ? cleanPhone : `${dialDigits}${cleanPhone}`;
           })(),
           referredBy: referredBy,
         }),
@@ -1139,9 +1174,12 @@ const SignupPage = () => {
                   }}
                 >
                   <img
-                    src={flagUs}
-                    alt="US flag"
+                    src={phoneCountry.flag}
+                    alt={phoneCountry.name}
                     className="w-5 h-3.5 md:w-6 md:h-4 rounded-sm object-cover"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
                   />
                   <span
                     className="text-xs md:text-sm"
@@ -1151,7 +1189,7 @@ const SignupPage = () => {
                       fontWeight: 400,
                     }}
                   >
-                    +1
+                    {phoneCountry.dialCode}
                   </span>
                 </div>
                 {/* Phone Input */}
@@ -1160,8 +1198,8 @@ const SignupPage = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="(123) 456-7890"
-                  maxLength={14}
+                  placeholder={getCountryPhonePlaceholder(phoneCountry)}
+                  maxLength={getCountryMaxFormattedLength(phoneCountry)}
                   disabled={!!phone}
                   readOnly={!!phone}
                   className="flex-1 px-2 md:px-3 outline-none bg-transparent placeholder:text-[#a3a3a3] disabled:cursor-not-allowed text-xs md:text-sm"

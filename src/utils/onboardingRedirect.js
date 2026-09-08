@@ -82,8 +82,8 @@ export const isDocumentRoute = (route) =>
   Object.values(DOC_KEY_TO_ROUTE).includes(route);
 
 /** Local step progress derived from server truth, one document at a time. */
-export const computeCompletedStepsFromUser = (user) => {
-  if (!user) return [];
+export const computeCompletedStepsFromUser = (user, isOnboarded = true) => {
+  if (!user || isOnboarded === false || user?.isOnboarded === false) return [];
 
   const steps = [STEPS.SIGNUP];
 
@@ -109,9 +109,12 @@ export const computeCompletedStepsFromUser = (user) => {
  * complete for any user, so logging in with a rejected document left every step flagged done
  * — and the next page bounced straight to /subscription with documents still outstanding.
  */
-export const syncCompletedStepsFromUser = (user) => {
-  if (!user) return;
-  setCompletedSteps(computeCompletedStepsFromUser(user));
+export const syncCompletedStepsFromUser = (user, isOnboarded = true) => {
+  if (!user || isOnboarded === false || user?.isOnboarded === false) {
+    setCompletedSteps([]);
+    return;
+  }
+  setCompletedSteps(computeCompletedStepsFromUser(user, isOnboarded));
 };
 
 const getFirstIncompleteDocumentRoute = (user) => {
@@ -170,9 +173,7 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
  * 1. If not onboarded (isOnboarded is false or user missing) -> /signup
  * 2. If rejected (accountStatus === 'rejected' or rejected docs) -> /verified-account (rejected)
  * 3. If profile incomplete (stepToComplete is present or missing docs) -> specific step
- * 4. If approved:
- *    - Active subscription -> /app/dashboard (Direct to Dashboard on login)
- *    - Unpaid subscription -> /subscription
+ * 4. If approved -> /subscription
  * 5. If all docs submitted / pending review:
  *    - Active subscription -> /verified-account (submitted)
  *    - Unpaid subscription -> /subscription
@@ -190,16 +191,20 @@ export const resolvePostLoginRoute = ({
       ? pendingDocuments
       : user?.pendingDocuments ?? [];
 
-  if (!user || isOnboarded === false) {
+  const isUserNotOnboarded =
+    !user || isOnboarded === false || user?.isOnboarded === false;
+
+  if (isUserNotOnboarded) {
+    syncCompletedStepsFromUser(user, false);
     return { path: '/signup' };
   }
 
   // Align local progress with server truth on every check
-  syncCompletedStepsFromUser(user);
+  syncCompletedStepsFromUser(user, isOnboarded);
 
   // 1. Rejected profile -> rejected summary on verified-account
   if (accountStatus === 'rejected' || hasRejectedDocuments(user, rejectedDocuments)) {
-    syncCompletedStepsFromUser(user);
+    syncCompletedStepsFromUser(user, isOnboarded);
     return {
       path: '/verified-account',
       state: {
@@ -225,18 +230,15 @@ export const resolvePostLoginRoute = ({
     return { path: docRoute };
   }
 
-  // 4. Approved profile -> Direct to dashboard if subscription active, else subscription screen
+  // 4. Approved profile -> Direct to subscription screen
   if (accountStatus === 'approved' || areAllDocumentsApproved(user)) {
-    syncCompletedStepsFromUser(user);
-    if (!hasActiveSubscription(user)) {
-      return { path: '/subscription' };
-    }
-    return { path: '/app/dashboard' };
+    syncCompletedStepsFromUser(user, isOnboarded);
+    return { path: '/subscription' };
   }
 
   // 5. All documents submitted / under review
   if (shouldShowVerifiedSubmitted(user, pendingDocs) || (accountStatus === 'pending' && hasActiveSubscription(user))) {
-    syncCompletedStepsFromUser(user);
+    syncCompletedStepsFromUser(user, isOnboarded);
     return {
       path: '/verified-account',
       state: { status: 'submitted' },
@@ -244,11 +246,11 @@ export const resolvePostLoginRoute = ({
   }
 
   if (!hasActiveSubscription(user)) {
-    syncCompletedStepsFromUser(user);
+    syncCompletedStepsFromUser(user, isOnboarded);
     return { path: '/subscription' };
   }
 
-  syncCompletedStepsFromUser(user);
+  syncCompletedStepsFromUser(user, isOnboarded);
   return { path: getFirstIncompleteStep() };
 };
 

@@ -3,14 +3,14 @@ import { ErrorToast } from "../components/global/Toaster";
 
 export const processSignup = (data, navigate) => {
   if (data?.success) {
-    navigate("/app/dashboard");
+    navigate("/subscription");
     return;
   }
 };
 
 export const processLogin = (data, navigate) => {
   if (data?.success) {
-    navigate("/app/dashboard");
+    navigate("/subscription");
     return;
   }
 };

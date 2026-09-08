@@ -70,25 +70,15 @@ export const verifyOtp = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "OTP verification failed");
       }
 
-      // Store token and user data if provided
+      // Store token on successful verification
       if (data?.token) {
         Cookies.set("token", data.token, { expires: 7 }); // 7 days expiry
-      }
-      if (data?.user) {
-        Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
       }
 
       SuccessToast(message || "OTP verified successfully");
       return {
         message: message || "OTP verified successfully",
         token: data?.token || null,
-        user: data?.user || null,
-        accountStatus: data?.accountStatus || null,
-        stepToComplete: data?.stepToComplete || null,
-        isOnboarded: data?.isOnboarded !== undefined ? data.isOnboarded : Boolean(data?.user),
-        rejectedDocuments: data?.rejectedDocuments || [],
-        approvedDocuments: data?.approvedDocuments || [],
-        pendingDocuments: data?.pendingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "OTP verification failed";
@@ -112,14 +102,28 @@ export const getAccountStatus = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "Failed to fetch account status");
       }
 
-      if (data?.user) {
-        Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
+      const userOnboardedStatus =
+        data?.isOnboarded !== undefined
+          ? Boolean(data.isOnboarded)
+          : data?.user?.isOnboarded !== undefined
+          ? Boolean(data.user.isOnboarded)
+          : false;
+
+      const userToStore = data?.user
+        ? {
+            ...data.user,
+            isOnboarded: userOnboardedStatus,
+          }
+        : null;
+
+      if (userToStore) {
+        Cookies.set("user", JSON.stringify(userToStore), { expires: 7 });
       }
 
       return {
-        user: data?.user || null,
-        accountStatus: data?.accountStatus || null,
-        isOnboarded: data?.isOnboarded !== undefined ? data.isOnboarded : Boolean(data?.user),
+        user: userToStore,
+        accountStatus: data?.accountStatus || data?.user?.accountStatus || null,
+        isOnboarded: userOnboardedStatus,
         stepToComplete: data?.stepToComplete || null,
         approvedDocuments: data?.approvedDocuments || [],
         pendingDocuments: data?.pendingDocuments || [],
@@ -517,6 +521,8 @@ const authSlice = createSlice({
           const parsed = JSON.parse(userRaw);
           if (parsed && typeof parsed === "object") {
             state.user = parsed;
+            state.isOnboarded = parsed.isOnboarded !== undefined ? Boolean(parsed.isOnboarded) : false;
+            state.accountStatus = parsed.accountStatus || state.accountStatus;
             state.isAuthenticated = Boolean(state.token);
           }
         } catch {
@@ -608,13 +614,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.success = action.payload.message;
         state.token = action.payload.token || Cookies.get("token") || null;
-        state.user = action.payload.user || JSON.parse(Cookies.get("user") || "null");
-        state.accountStatus = action.payload.accountStatus || state.accountStatus;
-        state.stepToComplete = action.payload.stepToComplete || null;
-        state.isOnboarded = action.payload.isOnboarded || false;
-        state.rejectedDocuments = action.payload.rejectedDocuments || [];
-        state.approvedDocuments = action.payload.approvedDocuments || [];
-        state.pendingDocuments = action.payload.pendingDocuments || [];
         state.isAuthenticated = Boolean(state.token);
         state.error = null;
       })
@@ -635,8 +634,8 @@ const authSlice = createSlice({
         if (action.payload.user) {
           state.user = action.payload.user;
         }
-        state.accountStatus = action.payload.accountStatus;
-        state.isOnboarded = action.payload.isOnboarded;
+        state.accountStatus = action.payload.accountStatus || (state.user?.accountStatus ?? state.accountStatus);
+        state.isOnboarded = action.payload.isOnboarded !== undefined ? Boolean(action.payload.isOnboarded) : false;
         state.stepToComplete = action.payload.stepToComplete;
         state.approvedDocuments = action.payload.approvedDocuments;
         state.pendingDocuments = action.payload.pendingDocuments;

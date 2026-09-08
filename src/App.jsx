@@ -3,8 +3,6 @@ import { Route, Routes, Navigate, useLocation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import "./App.css";
-import DashboardLayout from "./layouts/DashboardLayout";
-import DummyHome from "./pages/app/DummyHome";
 import DummyLogin from "./pages/authentication/DummyLogin";
 import AuthLayout from "./layouts/AuthLayout";
 import Login from "./pages/authentication/Login";
@@ -141,10 +139,6 @@ function App() {
       <Route path="ride-not-found" element={<RideNotFound />} />
       <Route path="ride-ended" element={<RideEnded />} />
       <Route path="ride-cancelled" element={<RideCancelled />} />
-
-      <Route path="app" element={<DashboardLayout />}>
-        <Route path="dashboard" element={<DummyHome />} />
-      </Route>
 
       <Route path="complete-setup" element={<Completedetup/>}/>
 

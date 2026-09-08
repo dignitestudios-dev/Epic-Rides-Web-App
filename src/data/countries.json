@@ -1,0 +1,1506 @@
+[
+  {
+    "name": "United States",
+    "code": "US",
+    "dialCode": "+1",
+    "flag": "https://flagcdn.com/w40/us.png",
+    "example": "(123) 456-7890",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Canada",
+    "code": "CA",
+    "dialCode": "+1",
+    "flag": "https://flagcdn.com/w40/ca.png",
+    "example": "(123) 456-7890",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "United Kingdom",
+    "code": "GB",
+    "dialCode": "+44",
+    "flag": "https://flagcdn.com/w40/gb.png",
+    "example": "7400 123456",
+    "mask": "#### ######"
+  },
+  {
+    "name": "Australia",
+    "code": "AU",
+    "dialCode": "+61",
+    "flag": "https://flagcdn.com/w40/au.png",
+    "example": "412 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Pakistan",
+    "code": "PK",
+    "dialCode": "+92",
+    "flag": "https://flagcdn.com/w40/pk.png",
+    "example": "301 2345678",
+    "mask": "### #######"
+  },
+  {
+    "name": "India",
+    "code": "IN",
+    "dialCode": "+91",
+    "flag": "https://flagcdn.com/w40/in.png",
+    "example": "81234 56789",
+    "mask": "##### #####"
+  },
+  {
+    "name": "United Arab Emirates",
+    "code": "AE",
+    "dialCode": "+971",
+    "flag": "https://flagcdn.com/w40/ae.png",
+    "example": "50 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Saudi Arabia",
+    "code": "SA",
+    "dialCode": "+966",
+    "flag": "https://flagcdn.com/w40/sa.png",
+    "example": "51 234 5678",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Afghanistan",
+    "code": "AF",
+    "dialCode": "+93",
+    "flag": "https://flagcdn.com/w40/af.png",
+    "example": "70 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Albania",
+    "code": "AL",
+    "dialCode": "+355",
+    "flag": "https://flagcdn.com/w40/al.png",
+    "example": "67 212 3456",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Algeria",
+    "code": "DZ",
+    "dialCode": "+213",
+    "flag": "https://flagcdn.com/w40/dz.png",
+    "example": "551 23 45 67",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Andorra",
+    "code": "AD",
+    "dialCode": "+376",
+    "flag": "https://flagcdn.com/w40/ad.png",
+    "example": "312 345",
+    "mask": "### ###"
+  },
+  {
+    "name": "Angola",
+    "code": "AO",
+    "dialCode": "+244",
+    "flag": "https://flagcdn.com/w40/ao.png",
+    "example": "923 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Antigua and Barbuda",
+    "code": "AG",
+    "dialCode": "+1268",
+    "flag": "https://flagcdn.com/w40/ag.png",
+    "example": "(268) 464-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Argentina",
+    "code": "AR",
+    "dialCode": "+54",
+    "flag": "https://flagcdn.com/w40/ar.png",
+    "example": "11 15-2345-6789",
+    "mask": "## ##-####-####"
+  },
+  {
+    "name": "Armenia",
+    "code": "AM",
+    "dialCode": "+374",
+    "flag": "https://flagcdn.com/w40/am.png",
+    "example": "77 123456",
+    "mask": "## ######"
+  },
+  {
+    "name": "Austria",
+    "code": "AT",
+    "dialCode": "+43",
+    "flag": "https://flagcdn.com/w40/at.png",
+    "example": "664 123456",
+    "mask": "### ######"
+  },
+  {
+    "name": "Azerbaijan",
+    "code": "AZ",
+    "dialCode": "+994",
+    "flag": "https://flagcdn.com/w40/az.png",
+    "example": "40 123 45 67",
+    "mask": "## ### ## ##"
+  },
+  {
+    "name": "Bahamas",
+    "code": "BS",
+    "dialCode": "+1242",
+    "flag": "https://flagcdn.com/w40/bs.png",
+    "example": "(242) 359-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Bahrain",
+    "code": "BH",
+    "dialCode": "+973",
+    "flag": "https://flagcdn.com/w40/bh.png",
+    "example": "3600 1234",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Bangladesh",
+    "code": "BD",
+    "dialCode": "+880",
+    "flag": "https://flagcdn.com/w40/bd.png",
+    "example": "1812-345678",
+    "mask": "####-######"
+  },
+  {
+    "name": "Barbados",
+    "code": "BB",
+    "dialCode": "+1246",
+    "flag": "https://flagcdn.com/w40/bb.png",
+    "example": "(246) 250-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Belarus",
+    "code": "BY",
+    "dialCode": "+375",
+    "flag": "https://flagcdn.com/w40/by.png",
+    "example": "8 029 491-19-11",
+    "mask": "# ### ###-##-##"
+  },
+  {
+    "name": "Belgium",
+    "code": "BE",
+    "dialCode": "+32",
+    "flag": "https://flagcdn.com/w40/be.png",
+    "example": "450 00 12 34",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Belize",
+    "code": "BZ",
+    "dialCode": "+501",
+    "flag": "https://flagcdn.com/w40/bz.png",
+    "example": "622-1234",
+    "mask": "###-####"
+  },
+  {
+    "name": "Benin",
+    "code": "BJ",
+    "dialCode": "+229",
+    "flag": "https://flagcdn.com/w40/bj.png",
+    "example": "1 95 12 34 56",
+    "mask": "# ## ## ## ##"
+  },
+  {
+    "name": "Bhutan",
+    "code": "BT",
+    "dialCode": "+975",
+    "flag": "https://flagcdn.com/w40/bt.png",
+    "example": "17 12 34 56",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Bolivia",
+    "code": "BO",
+    "dialCode": "+591",
+    "flag": "https://flagcdn.com/w40/bo.png",
+    "example": "71234567",
+    "mask": "########"
+  },
+  {
+    "name": "Bosnia and Herzegovina",
+    "code": "BA",
+    "dialCode": "+387",
+    "flag": "https://flagcdn.com/w40/ba.png",
+    "example": "61 123 456",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Botswana",
+    "code": "BW",
+    "dialCode": "+267",
+    "flag": "https://flagcdn.com/w40/bw.png",
+    "example": "71 123 456",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Brazil",
+    "code": "BR",
+    "dialCode": "+55",
+    "flag": "https://flagcdn.com/w40/br.png",
+    "example": "(11) 96123-4567",
+    "mask": "(##) #####-####"
+  },
+  {
+    "name": "Brunei",
+    "code": "BN",
+    "dialCode": "+673",
+    "flag": "https://flagcdn.com/w40/bn.png",
+    "example": "712 3456",
+    "mask": "### ####"
+  },
+  {
+    "name": "Bulgaria",
+    "code": "BG",
+    "dialCode": "+359",
+    "flag": "https://flagcdn.com/w40/bg.png",
+    "example": "43 012 345",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Burkina Faso",
+    "code": "BF",
+    "dialCode": "+226",
+    "flag": "https://flagcdn.com/w40/bf.png",
+    "example": "70 12 34 56",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Burundi",
+    "code": "BI",
+    "dialCode": "+257",
+    "flag": "https://flagcdn.com/w40/bi.png",
+    "example": "79 56 12 34",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Cambodia",
+    "code": "KH",
+    "dialCode": "+855",
+    "flag": "https://flagcdn.com/w40/kh.png",
+    "example": "91 234 567",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Cameroon",
+    "code": "CM",
+    "dialCode": "+237",
+    "flag": "https://flagcdn.com/w40/cm.png",
+    "example": "6 71 23 45 67",
+    "mask": "# ## ## ## ##"
+  },
+  {
+    "name": "Cape Verde",
+    "code": "CV",
+    "dialCode": "+238",
+    "flag": "https://flagcdn.com/w40/cv.png",
+    "example": "991 12 34",
+    "mask": "### ## ##"
+  },
+  {
+    "name": "Central African Republic",
+    "code": "CF",
+    "dialCode": "+236",
+    "flag": "https://flagcdn.com/w40/cf.png",
+    "example": "70 01 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Chad",
+    "code": "TD",
+    "dialCode": "+235",
+    "flag": "https://flagcdn.com/w40/td.png",
+    "example": "63 01 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Chile",
+    "code": "CL",
+    "dialCode": "+56",
+    "flag": "https://flagcdn.com/w40/cl.png",
+    "example": "(2) 2123 4567",
+    "mask": "(#) #### ####"
+  },
+  {
+    "name": "China",
+    "code": "CN",
+    "dialCode": "+86",
+    "flag": "https://flagcdn.com/w40/cn.png",
+    "example": "131 2345 6789",
+    "mask": "### #### ####"
+  },
+  {
+    "name": "Colombia",
+    "code": "CO",
+    "dialCode": "+57",
+    "flag": "https://flagcdn.com/w40/co.png",
+    "example": "321 1234567",
+    "mask": "### #######"
+  },
+  {
+    "name": "Comoros",
+    "code": "KM",
+    "dialCode": "+269",
+    "flag": "https://flagcdn.com/w40/km.png",
+    "example": "321 23 45",
+    "mask": "### ## ##"
+  },
+  {
+    "name": "Congo",
+    "code": "CG",
+    "dialCode": "+242",
+    "flag": "https://flagcdn.com/w40/cg.png",
+    "example": "6 123 4567",
+    "mask": "# ### ####"
+  },
+  {
+    "name": "Costa Rica",
+    "code": "CR",
+    "dialCode": "+506",
+    "flag": "https://flagcdn.com/w40/cr.png",
+    "example": "8312 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Croatia",
+    "code": "HR",
+    "dialCode": "+385",
+    "flag": "https://flagcdn.com/w40/hr.png",
+    "example": "92 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Cuba",
+    "code": "CU",
+    "dialCode": "+53",
+    "flag": "https://flagcdn.com/w40/cu.png",
+    "example": "5 1234567",
+    "mask": "# #######"
+  },
+  {
+    "name": "Cyprus",
+    "code": "CY",
+    "dialCode": "+357",
+    "flag": "https://flagcdn.com/w40/cy.png",
+    "example": "96 123456",
+    "mask": "## ######"
+  },
+  {
+    "name": "Czech Republic",
+    "code": "CZ",
+    "dialCode": "+420",
+    "flag": "https://flagcdn.com/w40/cz.png",
+    "example": "601 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Denmark",
+    "code": "DK",
+    "dialCode": "+45",
+    "flag": "https://flagcdn.com/w40/dk.png",
+    "example": "34 41 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Djibouti",
+    "code": "DJ",
+    "dialCode": "+253",
+    "flag": "https://flagcdn.com/w40/dj.png",
+    "example": "77 83 10 01",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Dominica",
+    "code": "DM",
+    "dialCode": "+1767",
+    "flag": "https://flagcdn.com/w40/dm.png",
+    "example": "(767) 225-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Dominican Republic",
+    "code": "DO",
+    "dialCode": "+1809",
+    "flag": "https://flagcdn.com/w40/do.png",
+    "example": "(809) 234-5678",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Ecuador",
+    "code": "EC",
+    "dialCode": "+593",
+    "flag": "https://flagcdn.com/w40/ec.png",
+    "example": "99 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Egypt",
+    "code": "EG",
+    "dialCode": "+20",
+    "flag": "https://flagcdn.com/w40/eg.png",
+    "example": "10 01234567",
+    "mask": "## ########"
+  },
+  {
+    "name": "El Salvador",
+    "code": "SV",
+    "dialCode": "+503",
+    "flag": "https://flagcdn.com/w40/sv.png",
+    "example": "7012 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Equatorial Guinea",
+    "code": "GQ",
+    "dialCode": "+240",
+    "flag": "https://flagcdn.com/w40/gq.png",
+    "example": "222 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Eritrea",
+    "code": "ER",
+    "dialCode": "+291",
+    "flag": "https://flagcdn.com/w40/er.png",
+    "example": "7 123 456",
+    "mask": "# ### ###"
+  },
+  {
+    "name": "Estonia",
+    "code": "EE",
+    "dialCode": "+372",
+    "flag": "https://flagcdn.com/w40/ee.png",
+    "example": "5123 4567",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Eswatini",
+    "code": "SZ",
+    "dialCode": "+268",
+    "flag": "https://flagcdn.com/w40/sz.png",
+    "example": "7612 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Ethiopia",
+    "code": "ET",
+    "dialCode": "+251",
+    "flag": "https://flagcdn.com/w40/et.png",
+    "example": "91 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Fiji",
+    "code": "FJ",
+    "dialCode": "+679",
+    "flag": "https://flagcdn.com/w40/fj.png",
+    "example": "701 2345",
+    "mask": "### ####"
+  },
+  {
+    "name": "Finland",
+    "code": "FI",
+    "dialCode": "+358",
+    "flag": "https://flagcdn.com/w40/fi.png",
+    "example": "41 2345678",
+    "mask": "## #######"
+  },
+  {
+    "name": "France",
+    "code": "FR",
+    "dialCode": "+33",
+    "flag": "https://flagcdn.com/w40/fr.png",
+    "example": "6 12 34 56 78",
+    "mask": "# ## ## ## ##"
+  },
+  {
+    "name": "Gabon",
+    "code": "GA",
+    "dialCode": "+241",
+    "flag": "https://flagcdn.com/w40/ga.png",
+    "example": "6 03 12 34",
+    "mask": "# ## ## ##"
+  },
+  {
+    "name": "Gambia",
+    "code": "GM",
+    "dialCode": "+220",
+    "flag": "https://flagcdn.com/w40/gm.png",
+    "example": "301 2345",
+    "mask": "### ####"
+  },
+  {
+    "name": "Georgia",
+    "code": "GE",
+    "dialCode": "+995",
+    "flag": "https://flagcdn.com/w40/ge.png",
+    "example": "555 12 34 56",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Germany",
+    "code": "DE",
+    "dialCode": "+49",
+    "flag": "https://flagcdn.com/w40/de.png",
+    "example": "1512 3456789",
+    "mask": "#### #######"
+  },
+  {
+    "name": "Ghana",
+    "code": "GH",
+    "dialCode": "+233",
+    "flag": "https://flagcdn.com/w40/gh.png",
+    "example": "23 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Greece",
+    "code": "GR",
+    "dialCode": "+30",
+    "flag": "https://flagcdn.com/w40/gr.png",
+    "example": "691 234 5678",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Grenada",
+    "code": "GD",
+    "dialCode": "+1473",
+    "flag": "https://flagcdn.com/w40/gd.png",
+    "example": "(473) 403-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Guatemala",
+    "code": "GT",
+    "dialCode": "+502",
+    "flag": "https://flagcdn.com/w40/gt.png",
+    "example": "5123 4567",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Guinea",
+    "code": "GN",
+    "dialCode": "+224",
+    "flag": "https://flagcdn.com/w40/gn.png",
+    "example": "601 12 34 56",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Guinea-Bissau",
+    "code": "GW",
+    "dialCode": "+245",
+    "flag": "https://flagcdn.com/w40/gw.png",
+    "example": "955 012 345",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Guyana",
+    "code": "GY",
+    "dialCode": "+592",
+    "flag": "https://flagcdn.com/w40/gy.png",
+    "example": "609 1234",
+    "mask": "### ####"
+  },
+  {
+    "name": "Haiti",
+    "code": "HT",
+    "dialCode": "+509",
+    "flag": "https://flagcdn.com/w40/ht.png",
+    "example": "34 10 1234",
+    "mask": "## ## ####"
+  },
+  {
+    "name": "Honduras",
+    "code": "HN",
+    "dialCode": "+504",
+    "flag": "https://flagcdn.com/w40/hn.png",
+    "example": "9123-4567",
+    "mask": "####-####"
+  },
+  {
+    "name": "Hong Kong",
+    "code": "HK",
+    "dialCode": "+852",
+    "flag": "https://flagcdn.com/w40/hk.png",
+    "example": "5123 4567",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Hungary",
+    "code": "HU",
+    "dialCode": "+36",
+    "flag": "https://flagcdn.com/w40/hu.png",
+    "example": "6 20 123 4567",
+    "mask": "# ## ### ####"
+  },
+  {
+    "name": "Iceland",
+    "code": "IS",
+    "dialCode": "+354",
+    "flag": "https://flagcdn.com/w40/is.png",
+    "example": "611 1234",
+    "mask": "### ####"
+  },
+  {
+    "name": "Indonesia",
+    "code": "ID",
+    "dialCode": "+62",
+    "flag": "https://flagcdn.com/w40/id.png",
+    "example": "812-345-678",
+    "mask": "###-###-###"
+  },
+  {
+    "name": "Iran",
+    "code": "IR",
+    "dialCode": "+98",
+    "flag": "https://flagcdn.com/w40/ir.png",
+    "example": "912 345 6789",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Iraq",
+    "code": "IQ",
+    "dialCode": "+964",
+    "flag": "https://flagcdn.com/w40/iq.png",
+    "example": "791 234 5678",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Ireland",
+    "code": "IE",
+    "dialCode": "+353",
+    "flag": "https://flagcdn.com/w40/ie.png",
+    "example": "85 012 3456",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Italy",
+    "code": "IT",
+    "dialCode": "+39",
+    "flag": "https://flagcdn.com/w40/it.png",
+    "example": "312 345 6789",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Jamaica",
+    "code": "JM",
+    "dialCode": "+1876",
+    "flag": "https://flagcdn.com/w40/jm.png",
+    "example": "(876) 210-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Japan",
+    "code": "JP",
+    "dialCode": "+81",
+    "flag": "https://flagcdn.com/w40/jp.png",
+    "example": "90-1234-5678",
+    "mask": "##-####-####"
+  },
+  {
+    "name": "Jordan",
+    "code": "JO",
+    "dialCode": "+962",
+    "flag": "https://flagcdn.com/w40/jo.png",
+    "example": "7 9012 3456",
+    "mask": "# #### ####"
+  },
+  {
+    "name": "Kazakhstan",
+    "code": "KZ",
+    "dialCode": "+7",
+    "flag": "https://flagcdn.com/w40/kz.png",
+    "example": "8 (771) 000 9998",
+    "mask": "# (###) ### ####"
+  },
+  {
+    "name": "Kenya",
+    "code": "KE",
+    "dialCode": "+254",
+    "flag": "https://flagcdn.com/w40/ke.png",
+    "example": "712 123456",
+    "mask": "### ######"
+  },
+  {
+    "name": "Kiribati",
+    "code": "KI",
+    "dialCode": "+686",
+    "flag": "https://flagcdn.com/w40/ki.png",
+    "example": "72001234",
+    "mask": "########"
+  },
+  {
+    "name": "Kuwait",
+    "code": "KW",
+    "dialCode": "+965",
+    "flag": "https://flagcdn.com/w40/kw.png",
+    "example": "500 12345",
+    "mask": "### #####"
+  },
+  {
+    "name": "Kyrgyzstan",
+    "code": "KG",
+    "dialCode": "+996",
+    "flag": "https://flagcdn.com/w40/kg.png",
+    "example": "700 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Laos",
+    "code": "LA",
+    "dialCode": "+856",
+    "flag": "https://flagcdn.com/w40/la.png",
+    "example": "20 23 123 456",
+    "mask": "## ## ### ###"
+  },
+  {
+    "name": "Latvia",
+    "code": "LV",
+    "dialCode": "+371",
+    "flag": "https://flagcdn.com/w40/lv.png",
+    "example": "21 234 567",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Lebanon",
+    "code": "LB",
+    "dialCode": "+961",
+    "flag": "https://flagcdn.com/w40/lb.png",
+    "example": "71 123 456",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Lesotho",
+    "code": "LS",
+    "dialCode": "+266",
+    "flag": "https://flagcdn.com/w40/ls.png",
+    "example": "5012 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Liberia",
+    "code": "LR",
+    "dialCode": "+231",
+    "flag": "https://flagcdn.com/w40/lr.png",
+    "example": "77 012 3456",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Libya",
+    "code": "LY",
+    "dialCode": "+218",
+    "flag": "https://flagcdn.com/w40/ly.png",
+    "example": "91-2345678",
+    "mask": "##-#######"
+  },
+  {
+    "name": "Liechtenstein",
+    "code": "LI",
+    "dialCode": "+423",
+    "flag": "https://flagcdn.com/w40/li.png",
+    "example": "660 234 567",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Lithuania",
+    "code": "LT",
+    "dialCode": "+370",
+    "flag": "https://flagcdn.com/w40/lt.png",
+    "example": "(0-612) 34567",
+    "mask": "(#-###) #####"
+  },
+  {
+    "name": "Luxembourg",
+    "code": "LU",
+    "dialCode": "+352",
+    "flag": "https://flagcdn.com/w40/lu.png",
+    "example": "628 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Macau",
+    "code": "MO",
+    "dialCode": "+853",
+    "flag": "https://flagcdn.com/w40/mo.png",
+    "example": "6612 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Madagascar",
+    "code": "MG",
+    "dialCode": "+261",
+    "flag": "https://flagcdn.com/w40/mg.png",
+    "example": "32 12 345 67",
+    "mask": "## ## ### ##"
+  },
+  {
+    "name": "Malawi",
+    "code": "MW",
+    "dialCode": "+265",
+    "flag": "https://flagcdn.com/w40/mw.png",
+    "example": "991 23 45 67",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Malaysia",
+    "code": "MY",
+    "dialCode": "+60",
+    "flag": "https://flagcdn.com/w40/my.png",
+    "example": "12-345 6789",
+    "mask": "##-### ####"
+  },
+  {
+    "name": "Maldives",
+    "code": "MV",
+    "dialCode": "+960",
+    "flag": "https://flagcdn.com/w40/mv.png",
+    "example": "771-2345",
+    "mask": "###-####"
+  },
+  {
+    "name": "Mali",
+    "code": "ML",
+    "dialCode": "+223",
+    "flag": "https://flagcdn.com/w40/ml.png",
+    "example": "65 01 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Malta",
+    "code": "MT",
+    "dialCode": "+356",
+    "flag": "https://flagcdn.com/w40/mt.png",
+    "example": "9696 1234",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Mauritania",
+    "code": "MR",
+    "dialCode": "+222",
+    "flag": "https://flagcdn.com/w40/mr.png",
+    "example": "22 12 34 56",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Mauritius",
+    "code": "MU",
+    "dialCode": "+230",
+    "flag": "https://flagcdn.com/w40/mu.png",
+    "example": "5251 2345",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Mexico",
+    "code": "MX",
+    "dialCode": "+52",
+    "flag": "https://flagcdn.com/w40/mx.png",
+    "example": "222 123 4567",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Micronesia",
+    "code": "FM",
+    "dialCode": "+691",
+    "flag": "https://flagcdn.com/w40/fm.png",
+    "example": "350 1234",
+    "mask": "### ####"
+  },
+  {
+    "name": "Moldova",
+    "code": "MD",
+    "dialCode": "+373",
+    "flag": "https://flagcdn.com/w40/md.png",
+    "example": "621 12 345",
+    "mask": "### ## ###"
+  },
+  {
+    "name": "Monaco",
+    "code": "MC",
+    "dialCode": "+377",
+    "flag": "https://flagcdn.com/w40/mc.png",
+    "example": "6 12 34 56 78",
+    "mask": "# ## ## ## ##"
+  },
+  {
+    "name": "Mongolia",
+    "code": "MN",
+    "dialCode": "+976",
+    "flag": "https://flagcdn.com/w40/mn.png",
+    "example": "8812 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Montenegro",
+    "code": "ME",
+    "dialCode": "+382",
+    "flag": "https://flagcdn.com/w40/me.png",
+    "example": "60 123 456",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Morocco",
+    "code": "MA",
+    "dialCode": "+212",
+    "flag": "https://flagcdn.com/w40/ma.png",
+    "example": "6 50 12 34 56",
+    "mask": "# ## ## ## ##"
+  },
+  {
+    "name": "Mozambique",
+    "code": "MZ",
+    "dialCode": "+258",
+    "flag": "https://flagcdn.com/w40/mz.png",
+    "example": "82 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Myanmar",
+    "code": "MM",
+    "dialCode": "+95",
+    "flag": "https://flagcdn.com/w40/mm.png",
+    "example": "9 212 3456",
+    "mask": "# ### ####"
+  },
+  {
+    "name": "Namibia",
+    "code": "NA",
+    "dialCode": "+264",
+    "flag": "https://flagcdn.com/w40/na.png",
+    "example": "81 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Nepal",
+    "code": "NP",
+    "dialCode": "+977",
+    "flag": "https://flagcdn.com/w40/np.png",
+    "example": "984-1234567",
+    "mask": "###-#######"
+  },
+  {
+    "name": "Netherlands",
+    "code": "NL",
+    "dialCode": "+31",
+    "flag": "https://flagcdn.com/w40/nl.png",
+    "example": "6 12345678",
+    "mask": "# ########"
+  },
+  {
+    "name": "New Zealand",
+    "code": "NZ",
+    "dialCode": "+64",
+    "flag": "https://flagcdn.com/w40/nz.png",
+    "example": "21 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Nicaragua",
+    "code": "NI",
+    "dialCode": "+505",
+    "flag": "https://flagcdn.com/w40/ni.png",
+    "example": "8123 4567",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Niger",
+    "code": "NE",
+    "dialCode": "+227",
+    "flag": "https://flagcdn.com/w40/ne.png",
+    "example": "93 12 34 56",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Nigeria",
+    "code": "NG",
+    "dialCode": "+234",
+    "flag": "https://flagcdn.com/w40/ng.png",
+    "example": "802 123 4567",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "North Macedonia",
+    "code": "MK",
+    "dialCode": "+389",
+    "flag": "https://flagcdn.com/w40/mk.png",
+    "example": "72 345 678",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Norway",
+    "code": "NO",
+    "dialCode": "+47",
+    "flag": "https://flagcdn.com/w40/no.png",
+    "example": "40 61 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Oman",
+    "code": "OM",
+    "dialCode": "+968",
+    "flag": "https://flagcdn.com/w40/om.png",
+    "example": "9212 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Panama",
+    "code": "PA",
+    "dialCode": "+507",
+    "flag": "https://flagcdn.com/w40/pa.png",
+    "example": "6123-4567",
+    "mask": "####-####"
+  },
+  {
+    "name": "Papua New Guinea",
+    "code": "PG",
+    "dialCode": "+675",
+    "flag": "https://flagcdn.com/w40/pg.png",
+    "example": "7012 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Paraguay",
+    "code": "PY",
+    "dialCode": "+595",
+    "flag": "https://flagcdn.com/w40/py.png",
+    "example": "961 456789",
+    "mask": "### ######"
+  },
+  {
+    "name": "Peru",
+    "code": "PE",
+    "dialCode": "+51",
+    "flag": "https://flagcdn.com/w40/pe.png",
+    "example": "912 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Philippines",
+    "code": "PH",
+    "dialCode": "+63",
+    "flag": "https://flagcdn.com/w40/ph.png",
+    "example": "905 123 4567",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Poland",
+    "code": "PL",
+    "dialCode": "+48",
+    "flag": "https://flagcdn.com/w40/pl.png",
+    "example": "512 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Portugal",
+    "code": "PT",
+    "dialCode": "+351",
+    "flag": "https://flagcdn.com/w40/pt.png",
+    "example": "912 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Puerto Rico",
+    "code": "PR",
+    "dialCode": "+1787",
+    "flag": "https://flagcdn.com/w40/pr.png",
+    "example": "(787) 234-5678",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Qatar",
+    "code": "QA",
+    "dialCode": "+974",
+    "flag": "https://flagcdn.com/w40/qa.png",
+    "example": "3312 3456",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Romania",
+    "code": "RO",
+    "dialCode": "+40",
+    "flag": "https://flagcdn.com/w40/ro.png",
+    "example": "712 034 567",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Russia",
+    "code": "RU",
+    "dialCode": "+7",
+    "flag": "https://flagcdn.com/w40/ru.png",
+    "example": "8 (912) 345-67-89",
+    "mask": "# (###) ###-##-##"
+  },
+  {
+    "name": "Rwanda",
+    "code": "RW",
+    "dialCode": "+250",
+    "flag": "https://flagcdn.com/w40/rw.png",
+    "example": "720 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Saint Kitts and Nevis",
+    "code": "KN",
+    "dialCode": "+1869",
+    "flag": "https://flagcdn.com/w40/kn.png",
+    "example": "(869) 765-2917",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Saint Lucia",
+    "code": "LC",
+    "dialCode": "+1758",
+    "flag": "https://flagcdn.com/w40/lc.png",
+    "example": "(758) 284-5678",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Saint Vincent and the Grenadines",
+    "code": "VC",
+    "dialCode": "+1784",
+    "flag": "https://flagcdn.com/w40/vc.png",
+    "example": "(784) 430-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Samoa",
+    "code": "WS",
+    "dialCode": "+685",
+    "flag": "https://flagcdn.com/w40/ws.png",
+    "example": "72 12345",
+    "mask": "## #####"
+  },
+  {
+    "name": "San Marino",
+    "code": "SM",
+    "dialCode": "+378",
+    "flag": "https://flagcdn.com/w40/sm.png",
+    "example": "66 66 12 12",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Senegal",
+    "code": "SN",
+    "dialCode": "+221",
+    "flag": "https://flagcdn.com/w40/sn.png",
+    "example": "70 123 45 67",
+    "mask": "## ### ## ##"
+  },
+  {
+    "name": "Serbia",
+    "code": "RS",
+    "dialCode": "+381",
+    "flag": "https://flagcdn.com/w40/rs.png",
+    "example": "60 1234567",
+    "mask": "## #######"
+  },
+  {
+    "name": "Seychelles",
+    "code": "SC",
+    "dialCode": "+248",
+    "flag": "https://flagcdn.com/w40/sc.png",
+    "example": "2 510 123",
+    "mask": "# ### ###"
+  },
+  {
+    "name": "Sierra Leone",
+    "code": "SL",
+    "dialCode": "+232",
+    "flag": "https://flagcdn.com/w40/sl.png",
+    "example": "(025) 123456",
+    "mask": "(###) ######"
+  },
+  {
+    "name": "Singapore",
+    "code": "SG",
+    "dialCode": "+65",
+    "flag": "https://flagcdn.com/w40/sg.png",
+    "example": "8123 4567",
+    "mask": "#### ####"
+  },
+  {
+    "name": "Slovakia",
+    "code": "SK",
+    "dialCode": "+421",
+    "flag": "https://flagcdn.com/w40/sk.png",
+    "example": "912 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Slovenia",
+    "code": "SI",
+    "dialCode": "+386",
+    "flag": "https://flagcdn.com/w40/si.png",
+    "example": "31 234 567",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Solomon Islands",
+    "code": "SB",
+    "dialCode": "+677",
+    "flag": "https://flagcdn.com/w40/sb.png",
+    "example": "74 21234",
+    "mask": "## #####"
+  },
+  {
+    "name": "Somalia",
+    "code": "SO",
+    "dialCode": "+252",
+    "flag": "https://flagcdn.com/w40/so.png",
+    "example": "7 1123456",
+    "mask": "# #######"
+  },
+  {
+    "name": "South Africa",
+    "code": "ZA",
+    "dialCode": "+27",
+    "flag": "https://flagcdn.com/w40/za.png",
+    "example": "71 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "South Korea",
+    "code": "KR",
+    "dialCode": "+82",
+    "flag": "https://flagcdn.com/w40/kr.png",
+    "example": "10-2000-0000",
+    "mask": "##-####-####"
+  },
+  {
+    "name": "South Sudan",
+    "code": "SS",
+    "dialCode": "+211",
+    "flag": "https://flagcdn.com/w40/ss.png",
+    "example": "977 123 456",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Spain",
+    "code": "ES",
+    "dialCode": "+34",
+    "flag": "https://flagcdn.com/w40/es.png",
+    "example": "612 34 56 78",
+    "mask": "### ## ## ##"
+  },
+  {
+    "name": "Sri Lanka",
+    "code": "LK",
+    "dialCode": "+94",
+    "flag": "https://flagcdn.com/w40/lk.png",
+    "example": "71 234 5678",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Sudan",
+    "code": "SD",
+    "dialCode": "+249",
+    "flag": "https://flagcdn.com/w40/sd.png",
+    "example": "91 123 1234",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Suriname",
+    "code": "SR",
+    "dialCode": "+597",
+    "flag": "https://flagcdn.com/w40/sr.png",
+    "example": "741-2345",
+    "mask": "###-####"
+  },
+  {
+    "name": "Sweden",
+    "code": "SE",
+    "dialCode": "+46",
+    "flag": "https://flagcdn.com/w40/se.png",
+    "example": "70-123 45 67",
+    "mask": "##-### ## ##"
+  },
+  {
+    "name": "Switzerland",
+    "code": "CH",
+    "dialCode": "+41",
+    "flag": "https://flagcdn.com/w40/ch.png",
+    "example": "78 123 45 67",
+    "mask": "## ### ## ##"
+  },
+  {
+    "name": "Syria",
+    "code": "SY",
+    "dialCode": "+963",
+    "flag": "https://flagcdn.com/w40/sy.png",
+    "example": "944 567 890",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Taiwan",
+    "code": "TW",
+    "dialCode": "+886",
+    "flag": "https://flagcdn.com/w40/tw.png",
+    "example": "912 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Tajikistan",
+    "code": "TJ",
+    "dialCode": "+992",
+    "flag": "https://flagcdn.com/w40/tj.png",
+    "example": "91 712 3456",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Tanzania",
+    "code": "TZ",
+    "dialCode": "+255",
+    "flag": "https://flagcdn.com/w40/tz.png",
+    "example": "621 234 567",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Thailand",
+    "code": "TH",
+    "dialCode": "+66",
+    "flag": "https://flagcdn.com/w40/th.png",
+    "example": "81 234 5678",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Togo",
+    "code": "TG",
+    "dialCode": "+228",
+    "flag": "https://flagcdn.com/w40/tg.png",
+    "example": "90 11 23 45",
+    "mask": "## ## ## ##"
+  },
+  {
+    "name": "Tonga",
+    "code": "TO",
+    "dialCode": "+676",
+    "flag": "https://flagcdn.com/w40/to.png",
+    "example": "771 5123",
+    "mask": "### ####"
+  },
+  {
+    "name": "Trinidad and Tobago",
+    "code": "TT",
+    "dialCode": "+1868",
+    "flag": "https://flagcdn.com/w40/tt.png",
+    "example": "(868) 291-1234",
+    "mask": "(###) ###-####"
+  },
+  {
+    "name": "Tunisia",
+    "code": "TN",
+    "dialCode": "+216",
+    "flag": "https://flagcdn.com/w40/tn.png",
+    "example": "20 123 456",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Turkey",
+    "code": "TR",
+    "dialCode": "+90",
+    "flag": "https://flagcdn.com/w40/tr.png",
+    "example": "501 234 56 78",
+    "mask": "### ### ## ##"
+  },
+  {
+    "name": "Turkmenistan",
+    "code": "TM",
+    "dialCode": "+993",
+    "flag": "https://flagcdn.com/w40/tm.png",
+    "example": "8 66 123456",
+    "mask": "# ## ######"
+  },
+  {
+    "name": "Uganda",
+    "code": "UG",
+    "dialCode": "+256",
+    "flag": "https://flagcdn.com/w40/ug.png",
+    "example": "712 345678",
+    "mask": "### ######"
+  },
+  {
+    "name": "Ukraine",
+    "code": "UA",
+    "dialCode": "+380",
+    "flag": "https://flagcdn.com/w40/ua.png",
+    "example": "50 123 4567",
+    "mask": "## ### ####"
+  },
+  {
+    "name": "Uruguay",
+    "code": "UY",
+    "dialCode": "+598",
+    "flag": "https://flagcdn.com/w40/uy.png",
+    "example": "94 231 234",
+    "mask": "## ### ###"
+  },
+  {
+    "name": "Uzbekistan",
+    "code": "UZ",
+    "dialCode": "+998",
+    "flag": "https://flagcdn.com/w40/uz.png",
+    "example": "91 234 56 78",
+    "mask": "## ### ## ##"
+  },
+  {
+    "name": "Vanuatu",
+    "code": "VU",
+    "dialCode": "+678",
+    "flag": "https://flagcdn.com/w40/vu.png",
+    "example": "591 2345",
+    "mask": "### ####"
+  },
+  {
+    "name": "Vatican City",
+    "code": "VA",
+    "dialCode": "+379",
+    "flag": "https://flagcdn.com/w40/va.png",
+    "example": "312 345 6789",
+    "mask": "### ### ####"
+  },
+  {
+    "name": "Venezuela",
+    "code": "VE",
+    "dialCode": "+58",
+    "flag": "https://flagcdn.com/w40/ve.png",
+    "example": "412-1234567",
+    "mask": "###-#######"
+  },
+  {
+    "name": "Vietnam",
+    "code": "VN",
+    "dialCode": "+84",
+    "flag": "https://flagcdn.com/w40/vn.png",
+    "example": "912 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Yemen",
+    "code": "YE",
+    "dialCode": "+967",
+    "flag": "https://flagcdn.com/w40/ye.png",
+    "example": "712 345 678",
+    "mask": "### ### ###"
+  },
+  {
+    "name": "Zambia",
+    "code": "ZM",
+    "dialCode": "+260",
+    "flag": "https://flagcdn.com/w40/zm.png",
+    "example": "95 5123456",
+    "mask": "## #######"
+  },
+  {
+    "name": "Zimbabwe",
+    "code": "ZW",
+    "dialCode": "+263",
+    "flag": "https://flagcdn.com/w40/zw.png",
+    "example": "71 234 5678",
+    "mask": "## ### ####"
+  }
+]
