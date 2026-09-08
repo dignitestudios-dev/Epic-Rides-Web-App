@@ -22,6 +22,7 @@ import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
 import { getAccountStatus, hydrateAuthFromCookies } from "./redux/slices/auth.slice";
+import { loginbackgroundimage } from "./assets/export";
 
 function App() {
   const dispatch = useDispatch();
@@ -53,18 +54,47 @@ function App() {
     }
   }, [dispatch, location.pathname, accountStatus]);
 
-  // Show full-screen loading spinner on initial load when token exists until status resolves
+  // Show branded loading screen on initial load when token exists until status resolves
   if (token && !isAccountStatusInitialized) {
     return (
-      <div className="relative w-full min-h-screen bg-black flex flex-col items-center justify-center">
-        <div className="relative w-24 h-24 flex items-center justify-center">
-          <div
-            className="absolute inset-0 border-4 rounded-full animate-spin"
-            style={{
-              borderColor: "#61CB08",
-              borderTopColor: "transparent",
-            }}
-          />
+      <div className="relative w-full min-h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-poppins px-4">
+        {/* Background Image with Car Watermark and Lights */}
+        <div 
+          className="fixed inset-0 w-full h-full bg-cover bg-center pointer-events-none"
+          style={{ backgroundImage: `url(${loginbackgroundimage})` }}
+        />
+
+        {/* Ambient Radial Glow */}
+        <div
+          className="absolute z-0 pointer-events-none animate-pulse"
+          style={{
+            width: 320,
+            height: 320,
+            borderRadius: "50%",
+            background: "rgba(97, 203, 8, 0.12)",
+            filter: "blur(70px)",
+          }}
+        />
+
+        {/* Glassmorphism Loading Card */}
+        <div 
+          className="relative z-10 flex flex-col items-center gap-5 p-8 sm:p-10 rounded-2xl bg-[rgba(239,239,239,0.06)] border border-[rgba(255,255,255,0.12)] backdrop-blur-[28px] shadow-2xl max-w-sm w-full"
+          style={{
+            WebkitBackdropFilter: "blur(28px)",
+          }}
+        >
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
+            <div
+              className="absolute inset-0 border-4 rounded-full animate-spin"
+              style={{
+                borderColor: "#61CB08",
+                borderTopColor: "transparent",
+              }}
+            />
+          </div>
+          <p className="font-poppins font-medium text-sm sm:text-base text-[#E6E6E6] m-0 text-center animate-pulse tracking-wide">
+            Verifying account status...
+          </p>
         </div>
       </div>
     );
