@@ -714,7 +714,10 @@ const AddVehicleDetails = () => {
                         background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
                         backdropFilter: 'blur(42px)',
                         border: fieldErrors.registrationExpiryDate ? '1px solid #EF4444' : '1px solid rgba(97, 203, 8, 0.32)',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        appearance: 'none'
                       }}
                     />
                     <div className="absolute right-3 md:right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/80 flex items-center justify-center">

@@ -777,6 +777,9 @@ const LicenseInformation = () => {
                     fontSize: '13px',
                     fontFamily: 'Poppins',
                     color: '#FFFFFF',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
                     transition: 'border-color 0.2s'
                   }}
                 />
