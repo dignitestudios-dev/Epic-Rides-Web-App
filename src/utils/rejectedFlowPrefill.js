@@ -20,12 +20,12 @@ export function mergeRejectedDocumentsForResubmit(rejectedFlow, {
   if (!Array.isArray(rejectedFlow) || rejectedFlow.length === 0) return [];
 
   const findInLists = (key) => {
-    const a = (rejectedDocsFromState || []).find((d) => d?.key === key);
-    if (a) return { ...a };
-    const b = (rejectedDocumentsRedux || []).find((d) => d?.key === key);
-    if (b) return { ...b };
-    const c = (apiRejectedDocuments || []).find((d) => d?.key === key);
-    if (c) return { ...c };
+    const b = (rejectedDocumentsRedux || []).find((d) => (typeof d === 'string' ? d === key : d?.key === key));
+    if (b) return typeof b === 'string' ? { key: b } : { ...b };
+    const a = (rejectedDocsFromState || []).find((d) => (typeof d === 'string' ? d === key : d?.key === key));
+    if (a) return typeof a === 'string' ? { key: a } : { ...a };
+    const c = (apiRejectedDocuments || []).find((d) => (typeof d === 'string' ? d === key : d?.key === key));
+    if (c) return typeof c === 'string' ? { key: c } : { ...c };
     return null;
   };
 

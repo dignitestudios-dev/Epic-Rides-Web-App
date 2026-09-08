@@ -18,7 +18,13 @@ import {
   isStepCompleted,
   markStepCompleted,
 } from '../../utils/stepValidation';
-import { hasActiveSubscription } from '../../utils/onboardingRedirect';
+import {
+  hasActiveSubscription,
+  hasRejectedDocuments,
+  buildRejectedDocumentsPayload,
+  areAllDocumentsApproved,
+  isDocumentRoute,
+} from '../../utils/onboardingRedirect';
 import {
   clearSubscriptionCheckoutSession,
   getPostSubscriptionFlowState,
@@ -32,7 +38,7 @@ const Subscription = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user, stepToComplete } = useSelector((state) => state.auth);
+  const { user, stepToComplete, accountStatus, rejectedDocuments } = useSelector((state) => state.auth);
   const authToken = Cookies.get('token');
 
   const formData = location.state?.formData || {};
@@ -45,7 +51,6 @@ const Subscription = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [purchasingPlanId, setPurchasingPlanId] = useState(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
-  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -147,16 +152,43 @@ const Subscription = () => {
 
     if (!user) return;
 
+    // 1. Rejection takes ABSOLUTE PRIORITY over subscription
+    if (
+      accountStatus === 'rejected' ||
+      hasRejectedDocuments(user, rejectedDocuments)
+    ) {
+      navigate('/verified-account', {
+        replace: true,
+        state: {
+          status: 'rejected',
+          rejectedDocuments: buildRejectedDocumentsPayload(user, rejectedDocuments),
+        },
+      });
+      return;
+    }
+
+    // 2. Incomplete document wizard steps must be completed before subscription
+    const nextIncompleteRoute = getFirstIncompleteStep();
+    if (isDocumentRoute(nextIncompleteRoute)) {
+      navigate(nextIncompleteRoute, { replace: true });
+      return;
+    }
+
+    // 3. If approved and active subscription already exists -> go to dashboard
+    if (
+      (accountStatus === 'approved' || areAllDocumentsApproved(user)) &&
+      hasActiveSubscription(user)
+    ) {
+      navigate('/app/dashboard', { replace: true });
+      return;
+    }
+
     const fetchSubscriptionDetails = async () => {
       const driverId = resolveDriverId(user);
       const detailsPath = getSubscriptionDetailsPath(driverId);
-      if (!detailsPath) {
-        setIsLoadingSubscription(false);
-        return;
-      }
+      if (!detailsPath) return;
 
       try {
-        setIsLoadingSubscription(true);
         const response = await axios.get(detailsPath, {
           skipAuthRedirect: true,
         });
@@ -171,32 +203,12 @@ const Subscription = () => {
         if (error.response?.status !== 404) {
           console.error('Error fetching subscription details:', error);
         }
-      } finally {
-        setIsLoadingSubscription(false);
       }
     };
 
-    // Subscription-first login: stay here to buy until active (do not send to license-information)
-    if (!hasActiveSubscription(user)) {
-      fetchSubscriptionDetails();
-      return;
-    }
-
-    if (!arePreviousStepsCompleted(STEPS.SUBSCRIPTION)) {
-      const allDocsApproved =
-        user?.driverLicense?.status === 'approved' &&
-        user?.vehicleRegistration?.status === 'approved' &&
-        user?.insurance?.status === 'approved' &&
-        user?.vehicleDetails?.status === 'approved';
-      if (!allDocsApproved) {
-        navigate(getFirstIncompleteStep());
-        return;
-      }
-    }
-
     fetchSubscriptionDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authToken, stepToComplete, navigate, dispatch]);
+  }, [user, authToken, stepToComplete, accountStatus, rejectedDocuments, navigate, dispatch]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -352,11 +364,7 @@ const Subscription = () => {
             </h2>
 
           {/* Show subscription card if user has active subscription */}
-          {isLoadingSubscription ? (
-            <div className="flex items-center justify-center py-4">
-              <p className="font-poppins font-normal text-sm text-white">Loading subscription details...</p>
-            </div>
-          ) : subscriptionDetails && subscriptionDetails.status === 'active' ? (
+          {subscriptionDetails && subscriptionDetails.status === 'active' ? (
             <div className="flex flex-col items-center gap-6 w-full">
               {/* Subscription Plan Card */}
               {(() => {

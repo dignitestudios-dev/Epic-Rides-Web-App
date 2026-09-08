@@ -9,9 +9,15 @@ const DOCUMENT_KEYS = [
 
 const DOC_KEY_TO_ROUTE = {
   driverLicense: '/license-information',
+  licenseInfo: '/license-information',
+  licenseInformation: '/license-information',
+  license: '/license-information',
   vehicleRegistration: '/vehicle-details',
+  vehicleReg: '/vehicle-details',
   insurance: '/insurance-information',
+  insuranceInfo: '/insurance-information',
   vehicleDetails: '/add-vehicle-details',
+  addVehicleDetails: '/add-vehicle-details',
 };
 
 export const areAllDocumentsApproved = (user) => {
@@ -25,7 +31,7 @@ export const hasActiveSubscription = (user) =>
 
 export const needsSubscriptionPurchase = (user) => !hasActiveSubscription(user);
 
-/** Doc still needs upload/resubmit (pending = already submitted, no form needed). */
+/** Doc still needs upload/resubmit (pending/approved = already submitted, no form needed). */
 const documentNeedsUserAction = (doc) => {
   if (!doc) return true;
   const status = doc.status;
@@ -118,17 +124,37 @@ const getFirstIncompleteDocumentRoute = (user) => {
   return null;
 };
 
-/** Build rejected list for verified-account when API only embeds status on user. */
+/** Build rejected list for verified-account merging user object and API rejected lists. */
 export const buildRejectedDocumentsPayload = (user, rejectedDocuments = []) => {
-  if (Array.isArray(rejectedDocuments) && rejectedDocuments.length > 0) {
-    return rejectedDocuments;
+  const rejectedMap = new Map();
+
+  if (Array.isArray(rejectedDocuments)) {
+    rejectedDocuments.forEach((d) => {
+      const key = typeof d === 'string' ? d : d?.key;
+      if (key && DOCUMENT_KEYS.includes(key)) {
+        rejectedMap.set(key, {
+          key,
+          rejectReason: typeof d === 'object' ? (d?.rejectReason || d?.rejectionReason || d?.reason || '') : '',
+          doc: typeof d === 'object' ? d?.doc || user?.[key] || null : user?.[key] || null,
+        });
+      }
+    });
   }
-  if (!user) return [];
-  return DOCUMENT_KEYS.filter((key) => user[key]?.status === 'rejected').map((key) => ({
-    key,
-    rejectReason: user[key]?.rejectReason || user[key]?.rejectionReason || null,
-    doc: user[key],
-  }));
+
+  if (user) {
+    DOCUMENT_KEYS.forEach((key) => {
+      if (user[key]?.status === 'rejected') {
+        const existing = rejectedMap.get(key) || {};
+        rejectedMap.set(key, {
+          key,
+          rejectReason: existing.rejectReason || user[key]?.rejectReason || user[key]?.rejectionReason || '',
+          doc: user[key] || existing.doc || null,
+        });
+      }
+    });
+  }
+
+  return DOCUMENT_KEYS.filter((key) => rejectedMap.has(key)).map((key) => rejectedMap.get(key));
 };
 
 export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
@@ -140,14 +166,20 @@ export const hasRejectedDocuments = (user, rejectedDocuments = []) => {
 };
 
 /**
- * Post-login route order:
- * 1. Subscription (if missing or not active)
- * 2. Verified account rejected (active sub + rejected docs — before stepToComplete)
- * 3. Documents (stepToComplete, missing uploads)
- * 4. Verified account submitted / other
+ * Post-login and Account-status route resolution:
+ * 1. If not onboarded (isOnboarded is false or user missing) -> /signup
+ * 2. If rejected (accountStatus === 'rejected' or rejected docs) -> /verified-account (rejected)
+ * 3. If profile incomplete (stepToComplete is present or missing docs) -> specific step
+ * 4. If approved:
+ *    - Active subscription -> /app/dashboard (Direct to Dashboard on login)
+ *    - Unpaid subscription -> /subscription
+ * 5. If all docs submitted / pending review:
+ *    - Active subscription -> /verified-account (submitted)
+ *    - Unpaid subscription -> /subscription
  */
 export const resolvePostLoginRoute = ({
   user,
+  accountStatus,
   isOnboarded,
   stepToComplete,
   rejectedDocuments = [],
@@ -162,11 +194,11 @@ export const resolvePostLoginRoute = ({
     return { path: '/signup' };
   }
 
-  // Align local progress with server truth on every login, whichever branch is taken below
+  // Align local progress with server truth on every check
   syncCompletedStepsFromUser(user);
 
-  // 1. Active subscription + rejected docs → rejected summary
-  if (hasRejectedDocuments(user, rejectedDocuments)) {
+  // 1. Rejected profile -> rejected summary on verified-account
+  if (accountStatus === 'rejected' || hasRejectedDocuments(user, rejectedDocuments)) {
     syncCompletedStepsFromUser(user);
     return {
       path: '/verified-account',
@@ -182,18 +214,28 @@ export const resolvePostLoginRoute = ({
       ? ''
       : String(stepToComplete).trim();
 
-  // 3a. API step when nothing rejected in payload
+  // 2. API step to complete
   if (step && DOC_KEY_TO_ROUTE[step]) {
     return { path: DOC_KEY_TO_ROUTE[step] };
   }
 
-  // 3b. Missing docs (not rejected/pending review)
+  // 3. Missing docs (not rejected/pending review)
   const docRoute = getFirstIncompleteDocumentRoute(user);
   if (docRoute) {
     return { path: docRoute };
   }
 
-  if (shouldShowVerifiedSubmitted(user, pendingDocs)) {
+  // 4. Approved profile -> Direct to dashboard if subscription active, else subscription screen
+  if (accountStatus === 'approved' || areAllDocumentsApproved(user)) {
+    syncCompletedStepsFromUser(user);
+    if (!hasActiveSubscription(user)) {
+      return { path: '/subscription' };
+    }
+    return { path: '/app/dashboard' };
+  }
+
+  // 5. All documents submitted / under review
+  if (shouldShowVerifiedSubmitted(user, pendingDocs) || (accountStatus === 'pending' && hasActiveSubscription(user))) {
     syncCompletedStepsFromUser(user);
     return {
       path: '/verified-account',
@@ -201,7 +243,7 @@ export const resolvePostLoginRoute = ({
     };
   }
 
-  if (areAllDocumentsApproved(user) && !hasActiveSubscription(user)) {
+  if (!hasActiveSubscription(user)) {
     syncCompletedStepsFromUser(user);
     return { path: '/subscription' };
   }
@@ -209,3 +251,5 @@ export const resolvePostLoginRoute = ({
   syncCompletedStepsFromUser(user);
   return { path: getFirstIncompleteStep() };
 };
+
+export const resolveAccountStatusRoute = resolvePostLoginRoute;

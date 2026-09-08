@@ -7,6 +7,8 @@ import { ErrorToast, SuccessToast } from "../../components/global/Toaster";
 // ================= INITIAL STATE =================
 const initialState = {
   isLoading: false,
+  isAccountStatusLoading: false,
+  isAccountStatusInitialized: false,
   error: null,
   success: null,
   phone: null,
@@ -14,11 +16,13 @@ const initialState = {
   isAuthenticated: false,
   user: null,
   token: null,
+  accountStatus: null,
   stepToComplete: null,
   isOnboarded: false,
   rejectedDocuments: [],
   approvedDocuments: [],
   pendingDocuments: [],
+  missingDocuments: [],
 };
 
 // ================= THUNKS =================
@@ -79,8 +83,9 @@ export const verifyOtp = createAsyncThunk(
         message: message || "OTP verified successfully",
         token: data?.token || null,
         user: data?.user || null,
+        accountStatus: data?.accountStatus || null,
         stepToComplete: data?.stepToComplete || null,
-        isOnboarded: data?.isOnboarded || false,
+        isOnboarded: data?.isOnboarded !== undefined ? data.isOnboarded : Boolean(data?.user),
         rejectedDocuments: data?.rejectedDocuments || [],
         approvedDocuments: data?.approvedDocuments || [],
         pendingDocuments: data?.pendingDocuments || [],
@@ -88,6 +93,41 @@ export const verifyOtp = createAsyncThunk(
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "OTP verification failed";
       ErrorToast(errorMessage);
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Get Account Status (Protected)
+export const getAccountStatus = createAsyncThunk(
+  "auth/getAccountStatus",
+  async (_, thunkAPI) => {
+    try {
+      const res = await axios.get("/api/auth/account-status", {
+        skipAuthRedirect: true,
+      });
+      const { success, message, data } = res.data || {};
+
+      if (!success || !data) {
+        return thunkAPI.rejectWithValue(message || "Failed to fetch account status");
+      }
+
+      if (data?.user) {
+        Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
+      }
+
+      return {
+        user: data?.user || null,
+        accountStatus: data?.accountStatus || null,
+        isOnboarded: data?.isOnboarded !== undefined ? data.isOnboarded : Boolean(data?.user),
+        stepToComplete: data?.stepToComplete || null,
+        approvedDocuments: data?.approvedDocuments || [],
+        pendingDocuments: data?.pendingDocuments || [],
+        rejectedDocuments: data?.rejectedDocuments || [],
+        missingDocuments: data?.missingDocuments || [],
+      };
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || e.message || "Failed to fetch account status";
       return thunkAPI.rejectWithValue(errorMessage);
     }
   }
@@ -178,6 +218,25 @@ export const onboard = createAsyncThunk(
   }
 );
 
+// Helper to fetch latest account status immediately after any document upload
+const fetchLatestAccountStatus = async () => {
+  try {
+    const res = await axios.get("/api/auth/account-status", {
+      skipAuthRedirect: true,
+    });
+    if (res.data?.success && res.data?.data) {
+      const data = res.data.data;
+      if (data.user) {
+        Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
+      }
+      return data;
+    }
+  } catch {
+    // fallback if status fetch fails
+  }
+  return null;
+};
+
 // Upload Driver Documents (License Information)
 export const uploadDriverDocuments = createAsyncThunk(
   "auth/uploadDriverDocuments",
@@ -216,11 +275,20 @@ export const uploadDriverDocuments = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "Document upload failed");
       }
 
+      const latestStatus = await fetchLatestAccountStatus();
+
       SuccessToast(message || "Documents uploaded successfully");
       return {
         message: message || "Documents uploaded successfully",
         data: data || null,
-        stepToComplete: data?.stepToComplete || null,
+        user: latestStatus?.user || null,
+        accountStatus: latestStatus?.accountStatus || null,
+        isOnboarded: latestStatus?.isOnboarded !== undefined ? latestStatus.isOnboarded : true,
+        stepToComplete: latestStatus?.stepToComplete || data?.stepToComplete || null,
+        approvedDocuments: latestStatus?.approvedDocuments || [],
+        pendingDocuments: latestStatus?.pendingDocuments || [],
+        rejectedDocuments: latestStatus?.rejectedDocuments || [],
+        missingDocuments: latestStatus?.missingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "Document upload failed";
@@ -264,11 +332,20 @@ export const uploadVehicleRegistrationDocuments = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "Vehicle registration upload failed");
       }
 
+      const latestStatus = await fetchLatestAccountStatus();
+
       SuccessToast(message || "Vehicle registration uploaded successfully");
       return {
         message: message || "Vehicle registration uploaded successfully",
         data: data || null,
-        stepToComplete: data?.stepToComplete || null,
+        user: latestStatus?.user || null,
+        accountStatus: latestStatus?.accountStatus || null,
+        isOnboarded: latestStatus?.isOnboarded !== undefined ? latestStatus.isOnboarded : true,
+        stepToComplete: latestStatus?.stepToComplete || data?.stepToComplete || null,
+        approvedDocuments: latestStatus?.approvedDocuments || [],
+        pendingDocuments: latestStatus?.pendingDocuments || [],
+        rejectedDocuments: latestStatus?.rejectedDocuments || [],
+        missingDocuments: latestStatus?.missingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "Vehicle registration upload failed";
@@ -315,11 +392,20 @@ export const uploadInsuranceDocuments = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "Insurance document upload failed");
       }
 
+      const latestStatus = await fetchLatestAccountStatus();
+
       SuccessToast(message || "Insurance documents uploaded successfully");
       return {
         message: message || "Insurance documents uploaded successfully",
         data: data || null,
-        stepToComplete: data?.stepToComplete || null,
+        user: latestStatus?.user || null,
+        accountStatus: latestStatus?.accountStatus || null,
+        isOnboarded: latestStatus?.isOnboarded !== undefined ? latestStatus.isOnboarded : true,
+        stepToComplete: latestStatus?.stepToComplete || data?.stepToComplete || null,
+        approvedDocuments: latestStatus?.approvedDocuments || [],
+        pendingDocuments: latestStatus?.pendingDocuments || [],
+        rejectedDocuments: latestStatus?.rejectedDocuments || [],
+        missingDocuments: latestStatus?.missingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "Insurance document upload failed";
@@ -365,11 +451,20 @@ export const uploadVehicleDetails = createAsyncThunk(
         return thunkAPI.rejectWithValue(message || "Vehicle details upload failed");
       }
 
+      const latestStatus = await fetchLatestAccountStatus();
+
       SuccessToast(message || "Vehicle details uploaded successfully");
       return {
         message: message || "Vehicle details uploaded successfully",
         data: data || null,
-        stepToComplete: data?.stepToComplete || null,
+        user: latestStatus?.user || null,
+        accountStatus: latestStatus?.accountStatus || null,
+        isOnboarded: latestStatus?.isOnboarded !== undefined ? latestStatus.isOnboarded : true,
+        stepToComplete: latestStatus?.stepToComplete || data?.stepToComplete || null,
+        approvedDocuments: latestStatus?.approvedDocuments || [],
+        pendingDocuments: latestStatus?.pendingDocuments || [],
+        rejectedDocuments: latestStatus?.rejectedDocuments || [],
+        missingDocuments: latestStatus?.missingDocuments || [],
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "Vehicle details upload failed";
@@ -388,13 +483,20 @@ const authSlice = createSlice({
       state.error = null;
       state.success = null;
       state.isLoading = false;
+      state.isAccountStatusLoading = false;
+      state.isAccountStatusInitialized = false;
       state.otpSent = false;
       state.phone = null;
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
+      state.accountStatus = null;
       state.stepToComplete = null;
       state.isOnboarded = false;
+      state.rejectedDocuments = [];
+      state.approvedDocuments = [];
+      state.pendingDocuments = [];
+      state.missingDocuments = [];
     },
     setPhone(state, action) {
       state.phone = action.payload;
@@ -436,12 +538,16 @@ const authSlice = createSlice({
       state.otpSent = false;
       state.error = null;
       state.success = null;
+      state.isLoading = false;
+      state.isAccountStatusLoading = false;
+      state.isAccountStatusInitialized = false;
+      state.accountStatus = null;
       state.stepToComplete = null;
       state.isOnboarded = false;
       state.rejectedDocuments = [];
       state.approvedDocuments = [];
       state.pendingDocuments = [];
-      state.isOnboarded = false;
+      state.missingDocuments = [];
     },
     /** After rejected docs are resubmitted — clear stale reject state so UI shows under review. */
     clearRejectedFlowState(state) {
@@ -503,18 +609,48 @@ const authSlice = createSlice({
         state.success = action.payload.message;
         state.token = action.payload.token || Cookies.get("token") || null;
         state.user = action.payload.user || JSON.parse(Cookies.get("user") || "null");
+        state.accountStatus = action.payload.accountStatus || state.accountStatus;
         state.stepToComplete = action.payload.stepToComplete || null;
         state.isOnboarded = action.payload.isOnboarded || false;
         state.rejectedDocuments = action.payload.rejectedDocuments || [];
         state.approvedDocuments = action.payload.approvedDocuments || [];
         state.pendingDocuments = action.payload.pendingDocuments || [];
-        state.isAuthenticated = true;
+        state.isAuthenticated = Boolean(state.token);
         state.error = null;
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
         state.isAuthenticated = false;
+      })
+      // Get Account Status
+      .addCase(getAccountStatus.pending, (state) => {
+        state.isAccountStatusLoading = true;
+        state.error = null;
+      })
+      .addCase(getAccountStatus.fulfilled, (state, action) => {
+        state.isAccountStatusLoading = false;
+        state.isAccountStatusInitialized = true;
+        state.error = null;
+        if (action.payload.user) {
+          state.user = action.payload.user;
+        }
+        state.accountStatus = action.payload.accountStatus;
+        state.isOnboarded = action.payload.isOnboarded;
+        state.stepToComplete = action.payload.stepToComplete;
+        state.approvedDocuments = action.payload.approvedDocuments;
+        state.pendingDocuments = action.payload.pendingDocuments;
+        state.rejectedDocuments = action.payload.rejectedDocuments;
+        state.missingDocuments = action.payload.missingDocuments;
+        if (Cookies.get("token")) {
+          state.isAuthenticated = true;
+          state.token = Cookies.get("token");
+        }
+      })
+      .addCase(getAccountStatus.rejected, (state, action) => {
+        state.isAccountStatusLoading = false;
+        state.isAccountStatusInitialized = true;
+        state.error = action.payload;
       })
       // Onboard
       .addCase(onboard.pending, (state) => {
@@ -527,7 +663,8 @@ const authSlice = createSlice({
         state.success = action.payload.message;
         state.token = action.payload.token || Cookies.get("token") || null;
         state.user = action.payload.user || JSON.parse(Cookies.get("user") || "null");
-        state.isAuthenticated = true;
+        state.isOnboarded = true;
+        state.isAuthenticated = Boolean(state.token);
         state.error = null;
       })
       .addCase(onboard.rejected, (state, action) => {
@@ -544,6 +681,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.success = action.payload.message;
         state.error = null;
+        if (action.payload.user) state.user = action.payload.user;
+        if (action.payload.accountStatus !== null && action.payload.accountStatus !== undefined) {
+          state.accountStatus = action.payload.accountStatus;
+        }
+        state.rejectedDocuments = action.payload.rejectedDocuments || [];
+        state.approvedDocuments = action.payload.approvedDocuments || [];
+        state.pendingDocuments = action.payload.pendingDocuments || [];
+        state.missingDocuments = action.payload.missingDocuments || [];
         state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
       })
       .addCase(uploadDriverDocuments.rejected, (state, action) => {
@@ -559,8 +704,16 @@ const authSlice = createSlice({
       .addCase(uploadVehicleRegistrationDocuments.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
         state.error = null;
+        if (action.payload.user) state.user = action.payload.user;
+        if (action.payload.accountStatus !== null && action.payload.accountStatus !== undefined) {
+          state.accountStatus = action.payload.accountStatus;
+        }
+        state.rejectedDocuments = action.payload.rejectedDocuments || [];
+        state.approvedDocuments = action.payload.approvedDocuments || [];
+        state.pendingDocuments = action.payload.pendingDocuments || [];
+        state.missingDocuments = action.payload.missingDocuments || [];
+        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
       })
       .addCase(uploadVehicleRegistrationDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -575,8 +728,16 @@ const authSlice = createSlice({
       .addCase(uploadInsuranceDocuments.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
         state.error = null;
+        if (action.payload.user) state.user = action.payload.user;
+        if (action.payload.accountStatus !== null && action.payload.accountStatus !== undefined) {
+          state.accountStatus = action.payload.accountStatus;
+        }
+        state.rejectedDocuments = action.payload.rejectedDocuments || [];
+        state.approvedDocuments = action.payload.approvedDocuments || [];
+        state.pendingDocuments = action.payload.pendingDocuments || [];
+        state.missingDocuments = action.payload.missingDocuments || [];
+        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
       })
       .addCase(uploadInsuranceDocuments.rejected, (state, action) => {
         state.isLoading = false;
@@ -591,8 +752,16 @@ const authSlice = createSlice({
       .addCase(uploadVehicleDetails.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = action.payload.message;
-        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
         state.error = null;
+        if (action.payload.user) state.user = action.payload.user;
+        if (action.payload.accountStatus !== null && action.payload.accountStatus !== undefined) {
+          state.accountStatus = action.payload.accountStatus;
+        }
+        state.rejectedDocuments = action.payload.rejectedDocuments || [];
+        state.approvedDocuments = action.payload.approvedDocuments || [];
+        state.pendingDocuments = action.payload.pendingDocuments || [];
+        state.missingDocuments = action.payload.missingDocuments || [];
+        state.stepToComplete = action.payload.stepToComplete || state.stepToComplete;
       })
       .addCase(uploadVehicleDetails.rejected, (state, action) => {
         state.isLoading = false;

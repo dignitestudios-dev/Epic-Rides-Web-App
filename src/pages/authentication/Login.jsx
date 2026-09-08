@@ -5,13 +5,50 @@ import { sendOtp, setPhone } from '../../redux/slices/auth.slice';
 import { loginbackgroundimage, logo } from '../../assets/export';
 import flagUs from '../../assets/login/flag-us-3310bc.png';
 import Cookies from 'js-cookie';
+import { resolvePostLoginRoute } from '../../utils/onboardingRedirect';
 
 export default function EpicRidesLogin() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoading } = useSelector((state) => state.auth);
+  const {
+    isLoading,
+    token,
+    user,
+    accountStatus,
+    stepToComplete,
+    rejectedDocuments,
+    pendingDocuments,
+    isOnboarded,
+    isAccountStatusInitialized,
+  } = useSelector((state) => state.auth);
+  const cookieToken = Cookies.get('token');
+
+  React.useEffect(() => {
+    if ((token || cookieToken) && isAccountStatusInitialized && user) {
+      const { path, state } = resolvePostLoginRoute({
+        user,
+        accountStatus,
+        isOnboarded,
+        stepToComplete,
+        rejectedDocuments,
+        pendingDocuments,
+      });
+      navigate(path, { replace: true, state });
+    }
+  }, [
+    token,
+    cookieToken,
+    isAccountStatusInitialized,
+    user,
+    accountStatus,
+    isOnboarded,
+    stepToComplete,
+    rejectedDocuments,
+    pendingDocuments,
+    navigate,
+  ]);
 
   React.useEffect(() => {
     const searchParams = new URLSearchParams(location.search);

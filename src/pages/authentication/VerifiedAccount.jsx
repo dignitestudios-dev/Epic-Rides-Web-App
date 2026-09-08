@@ -1,25 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Cookies from 'js-cookie';
 import { Check, X } from 'lucide-react';
-import axios from '../../axios';
 import SignupSidebar from '../../components/authentication/SignupSidebar';
 import SignupBackground from '../../components/authentication/SignupBackground';
 import LogoutModal from '../../components/global/LogoutModal';
 import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import {
-  STEPS,
-  arePreviousStepsCompleted,
   getFirstIncompleteStep,
   clearAllSteps,
-  isStepCompleted,
 } from '../../utils/stepValidation';
-import { mergeRejectedDocumentsForResubmit } from '../../utils/rejectedFlowPrefill';
-import { hasActiveSubscription, isDocumentRoute } from '../../utils/onboardingRedirect';
+import { hasActiveSubscription, isDocumentRoute, areAllDocumentsApproved } from '../../utils/onboardingRedirect';
 import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
-import { clearRejectedFlowState } from '../../redux/slices/auth.slice';
 
 const DOCUMENT_KEY_LABELS = {
   driverLicense: 'Driver License',
@@ -56,45 +50,85 @@ const prettifyRejectReason = (reason, key) => {
 const VerifiedAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
-  const { user, stepToComplete, rejectedDocuments: rejectedDocumentsRedux } = useSelector(
-    (state) => state.auth
-  );
+  const {
+    user,
+    accountStatus: reduxAccountStatus,
+    rejectedDocuments: rejectedDocumentsRedux,
+  } = useSelector((state) => state.auth);
   const formData = location.state?.formData || {};
   const licenseData = location.state?.licenseData || {};
   const vehicleData = location.state?.vehicleData || {};
   const insuranceData = location.state?.insuranceData || {};
   const vehicleDetails = location.state?.vehicleDetails || {};
-  const statusFromState = location.state?.status; // Get status from navigation state
-  const rejectedDocsFromState = location.state?.rejectedDocuments; // Get rejectedDocuments from state
+  const rejectedDocsFromState = location.state?.rejectedDocuments;
 
-  console.log('=== VerifiedAccount Component ===');
-  console.log('statusFromState:', statusFromState);
-  console.log('rejectedDocsFromState:', rejectedDocsFromState);
-  console.log('user:', user);
-  console.log('rejectedDocuments from Redux:', rejectedDocumentsRedux);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Check if all documents are pending
-  const allDocumentsPending = React.useMemo(() => {
-    if (!user) return false;
+  // Dynamic resolved rejected documents list from Redux polling + user object + route state
+  const resolvedRejectedDocs = React.useMemo(() => {
+    const orderedKeys = ['driverLicense', 'vehicleRegistration', 'insurance', 'vehicleDetails'];
+    const rejectedMap = new Map();
 
-    const driverLicenseStatus = user?.driverLicense?.status;
-    const vehicleRegistrationStatus = user?.vehicleRegistration?.status;
-    const insuranceStatus = user?.insurance?.status;
-    const vehicleDetailsStatus = user?.vehicleDetails?.status;
+    // 1. Redux rejectedDocuments array (kept fresh by global polling)
+    if (Array.isArray(rejectedDocumentsRedux)) {
+      rejectedDocumentsRedux.forEach((d) => {
+        const key = typeof d === 'string' ? d : d?.key;
+        if (key && orderedKeys.includes(key)) {
+          rejectedMap.set(key, {
+            key,
+            rejectReason: typeof d === 'object' ? (d?.rejectReason || d?.rejectionReason || d?.reason || '') : '',
+            doc: typeof d === 'object' ? d?.doc || user?.[key] || null : user?.[key] || null,
+          });
+        }
+      });
+    }
 
-    // Check if all documents exist and are pending
-    return (
-      driverLicenseStatus === 'pending' &&
-      vehicleRegistrationStatus === 'pending' &&
-      insuranceStatus === 'pending' &&
-      vehicleDetailsStatus === 'pending'
-    );
-  }, [user]);
+    // 2. User object document statuses from Redux
+    if (user) {
+      orderedKeys.forEach((key) => {
+        if (user[key]?.status === 'rejected') {
+          const existing = rejectedMap.get(key) || {};
+          rejectedMap.set(key, {
+            key,
+            rejectReason: (typeof existing.rejectReason === 'string' && existing.rejectReason.trim()) || user[key]?.rejectReason || user[key]?.rejectionReason || '',
+            doc: user[key] || existing.doc || null,
+          });
+        }
+      });
+    }
+
+    // 3. Location state rejectedDocuments (as fallback if state has extra reasons)
+    if (Array.isArray(rejectedDocsFromState)) {
+      rejectedDocsFromState.forEach((d) => {
+        const key = typeof d === 'string' ? d : d?.key;
+        if (key && orderedKeys.includes(key)) {
+          const existing = rejectedMap.get(key) || {};
+          rejectedMap.set(key, {
+            key,
+            rejectReason: (typeof existing.rejectReason === 'string' && existing.rejectReason.trim()) || (typeof d === 'object' ? (d?.rejectReason || d?.rejectionReason || d?.reason || '') : ''),
+            doc: existing.doc || (typeof d === 'object' ? d?.doc : null) || user?.[key] || null,
+          });
+        }
+      });
+    }
+
+    return orderedKeys.filter((key) => rejectedMap.has(key)).map((key) => rejectedMap.get(key));
+  }, [user, rejectedDocumentsRedux, rejectedDocsFromState]);
+
+  // Directly derive account state from Redux (kept fresh by global polling & upload thunks)
+  const hasRejectedDocs = reduxAccountStatus === 'rejected' || resolvedRejectedDocs.length > 0;
+
+  const isApproved =
+    reduxAccountStatus === 'approved' ||
+    (user && areAllDocumentsApproved(user));
+
+  const currentStatus = isApproved ? 'approved' : hasRejectedDocs ? 'rejected' : 'submitted';
+
+  const shouldShowResubmitButton = currentStatus === 'rejected';
 
   React.useEffect(() => {
     window.history.pushState(null, '', window.location.href);
-    const handlePopState = (event) => {
+    const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
     };
     window.addEventListener('popstate', handlePopState);
@@ -103,112 +137,33 @@ const VerifiedAccount = () => {
     };
   }, []);
 
-  // State to control which view to show: 'submitted', 'approved', 'rejected'
-  // Default to 'submitted', but can be overridden by status from location state
-  const [accountStatus, setAccountStatus] = useState(() => {
-    // If status is provided in location state, use it
-    if (statusFromState) {
-      console.log('✅ Using statusFromState:', statusFromState);
-      return statusFromState;
+  // Redirect guard: Check step validation and subscription
+  React.useEffect(() => {
+    // If rejected, ALWAYS allow access to view rejection reasons & resubmit
+    if (hasRejectedDocs) {
+      return;
     }
-    // Otherwise default to 'submitted'
-    return 'submitted';
-  });
-  const [apiAccountStatus, setApiAccountStatus] = useState(null);
-  const [apiRejectedDocuments, setApiRejectedDocuments] = useState([]);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const hasRejectedDocsAnywhere = React.useMemo(() => {
-    // After successful resubmit, trust "submitted" and ignore stale reject caches
-    if (statusFromState === 'submitted') return false;
-    if (Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) return true;
-    if (Array.isArray(rejectedDocumentsRedux) && rejectedDocumentsRedux.length > 0) return true;
-    if (Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) return true;
-    if (!user) return false;
-    return (
-      user?.driverLicense?.status === 'rejected' ||
-      user?.vehicleRegistration?.status === 'rejected' ||
-      user?.insurance?.status === 'rejected' ||
-      user?.vehicleDetails?.status === 'rejected'
-    );
-  }, [statusFromState, rejectedDocsFromState, rejectedDocumentsRedux, apiRejectedDocuments, user]);
-
-  const shouldShowResubmitButton = accountStatus === 'rejected' && hasRejectedDocsAnywhere;
-
-  // After resubmit completes, clear stale rejected docs from Redux so UI shows under review
-  React.useEffect(() => {
-    if (statusFromState !== 'submitted') return;
-    dispatch(clearRejectedFlowState());
-    setApiRejectedDocuments([]);
-    setApiAccountStatus('pending');
-    setAccountStatus('submitted');
-  }, [statusFromState, dispatch]);
-
-  // Check account status every 10 seconds from API.
-  React.useEffect(() => {
-    const userId = user?._id;
-    if (!userId) return;
-
-    const fetchAccountStatus = async () => {
-      try {
-        const response = await axios.get(`/api/auth/account-status/${userId}`, {
-          skipAuthRedirect: true,
-        });
-        const nextApiAccountStatus = response?.data?.data?.accountStatus;
-        const rejectedDocsFromApi = response?.data?.data?.rejectedDocuments;
-        const hasRejectedFromApi =
-          Array.isArray(rejectedDocsFromApi) && rejectedDocsFromApi.length > 0;
-
-        if (Array.isArray(rejectedDocsFromApi)) {
-          setApiRejectedDocuments(rejectedDocsFromApi);
-        }
-
-        if (nextApiAccountStatus) {
-          setApiAccountStatus(nextApiAccountStatus);
-        }
-
-        // Just-resubmitted: keep "submitted" until API reports a real reject again
-        if (statusFromState === 'submitted' && !hasRejectedFromApi) {
-          setAccountStatus('submitted');
-          return;
-        }
-
-        if (hasRejectedFromApi) {
-          setAccountStatus('rejected');
-        } else if (
-          nextApiAccountStatus &&
-          nextApiAccountStatus !== 'pending' &&
-          !allDocumentsPending
-        ) {
-          setAccountStatus(nextApiAccountStatus);
-        } else if (!hasRejectedFromApi && (allDocumentsPending || nextApiAccountStatus === 'pending')) {
-          setAccountStatus('submitted');
-        }
-      } catch (error) {
-        console.error('Failed to fetch account status', error);
-      }
-    };
-
-    fetchAccountStatus();
-    const intervalId = setInterval(fetchAccountStatus, 10000);
-
-    return () => clearInterval(intervalId);
-  }, [user?._id, statusFromState, allDocumentsPending]);
-
-  // Ensure status stays as 'submitted' if all documents are pending
-  React.useEffect(() => {
-    if (hasRejectedDocsAnywhere) return;
-
-    // IMPORTANT: If all documents are pending, ALWAYS keep status as 'submitted'
-    if (allDocumentsPending) {
-      // Force status to 'submitted' if it's not already
-      if (accountStatus !== 'submitted') {
-        console.log('⚠️ Setting status to submitted (all documents pending)');
-        setAccountStatus('submitted');
-      }
-      return; // Don't change status
+    // If user is null and not logged in, redirect to signup
+    if (!user && !Cookies.get('token')) {
+      navigate('/signup');
+      return;
     }
-  }, [accountStatus, allDocumentsPending, hasRejectedDocsAnywhere]);
+
+    // Documents come before payment: if any wizard step is still outstanding, go finish it
+    const nextRoute = getFirstIncompleteStep();
+    if (isDocumentRoute(nextRoute)) {
+      navigate(nextRoute, { replace: true });
+      return;
+    }
+
+    // Must have active subscription before accessing verified-account
+    if (user && !hasActiveSubscription(user)) {
+      clearSubscriptionCheckoutSession();
+      navigate('/subscription', { replace: true });
+      return;
+    }
+  }, [user, hasRejectedDocs, navigate]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -224,36 +179,12 @@ const VerifiedAccount = () => {
   };
 
   const handleResubmit = () => {
-    // Determine all rejected steps in the correct order
-    const orderedKeys = ['driverLicense', 'vehicleRegistration', 'insurance', 'vehicleDetails'];
-
-    // Source of rejected docs: location state, Redux, or user object
-    const rejectedSet = new Set();
-
-    if (rejectedDocsFromState && Array.isArray(rejectedDocsFromState)) {
-      rejectedDocsFromState.forEach((doc) => doc.key && rejectedSet.add(doc.key));
-    }
-    if (rejectedDocumentsRedux && Array.isArray(rejectedDocumentsRedux)) {
-      rejectedDocumentsRedux.forEach((doc) => doc.key && rejectedSet.add(doc.key));
-    }
-    if (apiRejectedDocuments && Array.isArray(apiRejectedDocuments)) {
-      apiRejectedDocuments.forEach((doc) => doc.key && rejectedSet.add(doc.key));
-    }
-    if (user) {
-      if (user?.driverLicense?.status === 'rejected') rejectedSet.add('driverLicense');
-      if (user?.vehicleRegistration?.status === 'rejected') rejectedSet.add('vehicleRegistration');
-      if (user?.insurance?.status === 'rejected') rejectedSet.add('insurance');
-      if (user?.vehicleDetails?.status === 'rejected') rejectedSet.add('vehicleDetails');
-    }
-
-    const rejectedFlow = orderedKeys.filter((key) => rejectedSet.has(key));
-
-    if (rejectedFlow.length === 0) {
-      // No rejected steps found, fallback
+    if (resolvedRejectedDocs.length === 0) {
       navigate('/signup');
       return;
     }
 
+    const rejectedFlow = resolvedRejectedDocs.map((d) => d.key);
     const routeMap = {
       driverLicense: '/license-information',
       vehicleRegistration: '/vehicle-details',
@@ -263,13 +194,6 @@ const VerifiedAccount = () => {
 
     const firstKey = rejectedFlow[0];
     const route = routeMap[firstKey] || '/signup';
-
-    const mergedRejectedDocuments = mergeRejectedDocumentsForResubmit(rejectedFlow, {
-      rejectedDocsFromState,
-      rejectedDocumentsRedux,
-      apiRejectedDocuments,
-      user,
-    });
 
     navigate(route, {
       state: {
@@ -281,7 +205,7 @@ const VerifiedAccount = () => {
         fromVerifiedAccount: true,
         rejectedFlow,
         currentIndex: 0,
-        rejectedDocuments: mergedRejectedDocuments,
+        rejectedDocuments: resolvedRejectedDocs,
       },
     });
   };
@@ -315,222 +239,17 @@ const VerifiedAccount = () => {
       );
     };
 
-    // PRIORITY 1: rejectedDocuments from location state (e.g. Verification.jsx)
-    if (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) {
-      return apiRejectedDocuments.map((rejectedDoc, index) => renderRejectedRow(rejectedDoc, index));
-    }
-
-    // PRIORITY 1: rejectedDocuments from location state (e.g. Verification.jsx)
-    if (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) {
-      return rejectedDocsFromState.map((rejectedDoc, index) => renderRejectedRow(rejectedDoc, index));
-    }
-
-    // PRIORITY 2: rejectedDocuments from Redux
-    if (
-      rejectedDocumentsRedux &&
-      Array.isArray(rejectedDocumentsRedux) &&
-      rejectedDocumentsRedux.length > 0
-    ) {
-      return rejectedDocumentsRedux.map((rejectedDoc, index) => renderRejectedRow(rejectedDoc, index));
-    }
-
-    // PRIORITY 3: user object — same shape as API (key + rejectReason) for consistent UI
-    if (user) {
-      const fromUser = [];
-      if (user?.driverLicense?.status === 'rejected') {
-        fromUser.push({ key: 'driverLicense', rejectReason: user.driverLicense.rejectReason });
-      }
-      if (user?.vehicleRegistration?.status === 'rejected') {
-        fromUser.push({ key: 'vehicleRegistration', rejectReason: user.vehicleRegistration.rejectReason });
-      }
-      if (user?.insurance?.status === 'rejected') {
-        fromUser.push({ key: 'insurance', rejectReason: user.insurance.rejectReason });
-      }
-      if (user?.vehicleDetails?.status === 'rejected') {
-        fromUser.push({ key: 'vehicleDetails', rejectReason: user.vehicleDetails.rejectReason });
-      }
-
-      if (fromUser.length > 0) {
-        return fromUser.map((row, index) => renderRejectedRow(row, index));
-      }
+    if (resolvedRejectedDocs.length > 0) {
+      return resolvedRejectedDocs.map((rejectedDoc, index) => renderRejectedRow(rejectedDoc, index));
     }
 
     // Default fallback reasons
-    console.log('⚠️ Using default fallback reasons');
     return (
-      <>
-        <p className="font-poppins font-normal text-sm text-white m-0">
-          1. Your profile picture is blurry.
-        </p>
-        <p className="font-poppins font-normal text-sm text-white m-0">
-          2. Number Plate cannot be readable.
-        </p>
-      </>
+      <p className="font-poppins font-normal text-sm text-white m-0">
+        Your document was rejected. Please click resubmit to upload updated documents.
+      </p>
     );
   };
-
-  // Update account status based on user documents status
-  React.useEffect(() => {
-    console.log('=== useEffect: Update account status ===');
-
-    // After resubmit, always show Request Submitted (ignore stale Redux reject cache)
-    if (statusFromState === 'submitted') {
-      console.log('✅ PRIORITY 0: statusFromState is submitted, setting status to submitted');
-      setAccountStatus('submitted');
-      return;
-    }
-
-    const hasRejectedDocs =
-      (apiRejectedDocuments && Array.isArray(apiRejectedDocuments) && apiRejectedDocuments.length > 0) ||
-      (rejectedDocsFromState && Array.isArray(rejectedDocsFromState) && rejectedDocsFromState.length > 0) ||
-      (rejectedDocumentsRedux &&
-        Array.isArray(rejectedDocumentsRedux) &&
-        rejectedDocumentsRedux.length > 0) ||
-      (user &&
-        (user?.driverLicense?.status === 'rejected' ||
-          user?.vehicleRegistration?.status === 'rejected' ||
-          user?.insurance?.status === 'rejected' ||
-          user?.vehicleDetails?.status === 'rejected'));
-
-    // Rejected documents override generic API statuses like "incomplete"
-    if (hasRejectedDocs) {
-      console.log('✅ PRIORITY API: rejectedDocuments found, setting status to rejected');
-      setAccountStatus('rejected');
-      return;
-    }
-
-    // PRIORITY 1: If statusFromState is 'rejected', keep it as rejected
-    if (statusFromState === 'rejected') {
-      console.log('✅ PRIORITY 1: statusFromState is rejected, keeping status as rejected');
-      setAccountStatus('rejected');
-      return;
-    }
-
-    // PRIORITY 2: If all documents are pending, show Request Submitted (API may say "pending")
-    if (allDocumentsPending) {
-      console.log('✅ PRIORITY 2: All documents pending, setting status to submitted');
-      setAccountStatus('submitted');
-      return;
-    }
-
-    // API account status when not in full pending-review state
-    if (apiAccountStatus) {
-      setAccountStatus(apiAccountStatus);
-      return;
-    }
-
-    // If user exists but not all documents are pending, check individual statuses
-    if (user) {
-      console.log('Checking user object for document statuses');
-      const driverLicenseStatus = user?.driverLicense?.status;
-      const vehicleRegistrationStatus = user?.vehicleRegistration?.status;
-      const insuranceStatus = user?.insurance?.status;
-      const vehicleDetailsStatus = user?.vehicleDetails?.status;
-
-      console.log('Document statuses:', {
-        driverLicenseStatus,
-        vehicleRegistrationStatus,
-        insuranceStatus,
-        vehicleDetailsStatus
-      });
-
-      // Check if any document is rejected
-      if (
-        driverLicenseStatus === 'rejected' ||
-        vehicleRegistrationStatus === 'rejected' ||
-        insuranceStatus === 'rejected' ||
-        vehicleDetailsStatus === 'rejected'
-      ) {
-        console.log('✅ PRIORITY 4: Found rejected document in user object, setting status to rejected');
-        setAccountStatus('rejected');
-        return;
-      }
-
-      // Check if all documents are approved (and none are pending)
-      if (
-        driverLicenseStatus === 'approved' &&
-        vehicleRegistrationStatus === 'approved' &&
-        insuranceStatus === 'approved' &&
-        vehicleDetailsStatus === 'approved' &&
-        !allDocumentsPending
-      ) {
-        console.log('✅ PRIORITY 5: All documents approved, setting status to approved');
-        setAccountStatus('approved');
-        return;
-      }
-    }
-
-    console.log('⚠️ No condition matched, keeping current status');
-  }, [allDocumentsPending, user, statusFromState, rejectedDocumentsRedux, rejectedDocsFromState, apiRejectedDocuments, apiAccountStatus]);
-
-  // Redirect logic: Check step validation and user authentication
-  React.useEffect(() => {
-    console.log('=== useEffect: Redirect logic ===');
-
-    // IMPORTANT: Do NOT redirect if statusFromState is 'rejected'
-    // When user comes from Verification.jsx with rejected status, allow them to see the rejected page
-    if (statusFromState === 'rejected') {
-      console.log('✅ statusFromState is rejected, ALLOWING ACCESS (no redirect)');
-      return; // ALLOW ACCESS - don't redirect
-    }
-
-    // Priority 1: If user is null AND statusFromState is not 'rejected', redirect to signup
-    if (!user && statusFromState !== 'rejected') {
-      console.log('❌ PRIORITY 1: No user and statusFromState is not rejected, redirecting to /signup');
-      navigate('/signup');
-      return;
-    }
-
-    // Documents come before payment: if any step is still outstanding, go finish it rather
-    // than falling through to /subscription. This reads local progress, which markStepCompleted
-    // updates immediately after each upload — the redux user is still stale at this point.
-    if (user) {
-      const nextRoute = getFirstIncompleteStep();
-      if (isDocumentRoute(nextRoute)) {
-        navigate(nextRoute, { replace: true });
-        return;
-      }
-    }
-
-    // Must have active subscription before verified-account (e.g. Stripe cancel/back)
-    if (user && !hasActiveSubscription(user)) {
-      clearSubscriptionCheckoutSession();
-      navigate('/subscription', { replace: true });
-      return;
-    }
-
-    const hasRejectedFlow =
-      statusFromState === 'rejected' ||
-      (rejectedDocsFromState && rejectedDocsFromState.length > 0) ||
-      (rejectedDocumentsRedux && rejectedDocumentsRedux.length > 0);
-
-    if (!hasRejectedFlow && !hasActiveSubscription(user)) {
-      navigate('/subscription', { replace: true });
-      return;
-    }
-
-    if (stepToComplete === null || stepToComplete === undefined || stepToComplete === "" || !stepToComplete) {
-      console.log('✅ PRIORITY 2: stepToComplete is null/empty, ALLOWING ACCESS');
-      return;
-    }
-
-    // Determine if we have navigation state from previous steps in this session
-    const hasFlowState =
-      (formData && Object.keys(formData).length > 0) ||
-      (licenseData && Object.keys(licenseData).length > 0) ||
-      (vehicleData && Object.keys(vehicleData).length > 0) ||
-      (insuranceData && Object.keys(insuranceData).length > 0) ||
-      (vehicleDetails && Object.keys(vehicleDetails).length > 0);
-
-    // Priority 3: Only use step validation redirect when we DON'T have in-memory flow state
-    if (!hasFlowState && !arePreviousStepsCompleted(STEPS.VERIFIED_ACCOUNT)) {
-      console.log('❌ PRIORITY 3: Previous steps not completed and no flow state, redirecting to first incomplete step');
-      navigate(getFirstIncompleteStep());
-      return;
-    }
-
-    console.log('✅ All redirect checks passed, allowing access');
-  }, [user, stepToComplete, formData, licenseData, vehicleData, insuranceData, vehicleDetails, navigate, statusFromState]);
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
@@ -548,7 +267,7 @@ const VerifiedAccount = () => {
         <div className="w-full min-h-full flex flex-col items-center justify-start pt-24 sm:pt-28 lg:pt-10 pb-16 px-4 md:px-8 lg:w-[calc(100%-420px)] lg:mr-8 xl:mr-16 2xl:mr-24">
           <div className="w-full max-w-lg my-auto flex flex-col items-center">
             {/* Request Submitted State */}
-          {(accountStatus === 'submitted' || accountStatus === 'pending') && (
+          {currentStatus === 'submitted' && (
             <div className="flex flex-col items-center justify-center gap-8">
               {/* Spinner */}
               <div className="relative w-32 h-32 flex items-center justify-center">
@@ -574,7 +293,7 @@ const VerifiedAccount = () => {
           )}
 
           {/* Profile Approved State */}
-          {accountStatus === 'approved' && !allDocumentsPending && (
+          {currentStatus === 'approved' && (
             <div className="flex flex-col items-center justify-center gap-5">
               {/* Success Icon - Green Square with Checkmark */}
               <div className="w-24 h-24 rounded-xl bg-[#61CB08] flex items-center justify-center shadow-lg">
@@ -588,13 +307,24 @@ const VerifiedAccount = () => {
 
               {/* Message */}
               <p className="font-poppins font-normal text-base text-center text-[#E6E6E6] m-0 px-4 max-w-md">
-                Your profile is approved. You can log in to the driver app when ready.
+                Your profile is approved. You can now access your dashboard.
               </p>
+
+              {/* Continue to Dashboard Button */}
+              <div className="flex flex-col gap-3 mt-4 w-full max-w-[360px]">
+                <button
+                  type="button"
+                  onClick={() => navigate('/app/dashboard')}
+                  className="w-full py-3 rounded-xl font-poppins font-semibold text-sm capitalize cursor-pointer transition-colors duration-200 bg-[#61CB08] text-[#000B00] hover:bg-[#55b307]"
+                >
+                  Continue to Dashboard
+                </button>
+              </div>
             </div>
           )}
 
           {/* Profile Rejected State */}
-          {accountStatus === 'rejected' && (
+          {currentStatus === 'rejected' && (
             <div className="flex flex-col items-center justify-center gap-8">
               {/* Error Icon - Red Square with X */}
               <div className="w-24 h-24 rounded-xl bg-[#EF4444] flex items-center justify-center shadow-lg">

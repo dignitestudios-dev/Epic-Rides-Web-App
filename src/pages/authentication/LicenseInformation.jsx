@@ -12,7 +12,7 @@ import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, clearAllSteps, isStepCompleted, getFirstIncompleteStep } from '../../utils/stepValidation';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
-import { isDocumentRoute } from '../../utils/onboardingRedirect';
+import { isDocumentRoute, hasActiveSubscription, hasRejectedDocuments, buildRejectedDocumentsPayload } from '../../utils/onboardingRedirect';
 import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
 const LICENSE_NUMBER_REGEX = /^[A-Z0-9]{6,15}$/;
@@ -51,6 +51,7 @@ const LicenseInformation = () => {
   const [backImage, setBackImage] = useState(null);
   const [backImagePreview, setBackImagePreview] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const hasPrefilledRef = React.useRef(false);
 
   // Field-level error states
   const [fieldErrors, setFieldErrors] = useState({
@@ -354,13 +355,16 @@ const LicenseInformation = () => {
       const currentIndex = location.state?.currentIndex ?? 0;
       
       if (fromVerified && Array.isArray(rejectedFlow) && rejectedFlow.length > 0) {
-        // Route by real progress, not by position in the rejected list: the driver may still
-        // owe another rejected document, or one that was never uploaded at all. Only when
-        // nothing is outstanding does this resolve to /subscription or /verified-account.
-        const nextRoute = getFirstIncompleteStep();
+        const routeMap = {
+          driverLicense: '/license-information',
+          vehicleRegistration: '/vehicle-details',
+          insurance: '/insurance-information',
+          vehicleDetails: '/add-vehicle-details',
+        };
         const nextIndex = currentIndex + 1;
-
-        if (isDocumentRoute(nextRoute)) {
+        if (nextIndex < rejectedFlow.length) {
+          const nextKey = rejectedFlow[nextIndex];
+          const nextRoute = routeMap[nextKey] || '/verified-account';
           navigate(nextRoute, {
             state: {
               formData,
@@ -378,17 +382,56 @@ const LicenseInformation = () => {
           return;
         }
 
-        navigate(nextRoute, {
-          state: {
-            formData,
-            licenseData: {
-              ...licenseData,
-              frontImage: fFront,
-              backImage: fBack,
+        const currentUser = result?.user || user;
+        const currentAccountStatus = result?.accountStatus;
+        const currentRejectedDocs = result?.rejectedDocuments || [];
+
+        if (
+          currentAccountStatus === 'rejected' ||
+          hasRejectedDocuments(currentUser, currentRejectedDocs)
+        ) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData: {
+                ...licenseData,
+                frontImage: fFront,
+                backImage: fBack,
+              },
+              status: 'rejected',
+              rejectedDocuments: buildRejectedDocumentsPayload(currentUser, currentRejectedDocs),
             },
-            status: 'submitted',
-          },
-        });
+          });
+          return;
+        }
+
+        if (hasActiveSubscription(currentUser)) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData: {
+                ...licenseData,
+                frontImage: fFront,
+                backImage: fBack,
+              },
+              status: 'submitted',
+            },
+          });
+        } else {
+          navigate('/subscription', {
+            replace: true,
+            state: {
+              formData,
+              licenseData: {
+                ...licenseData,
+                frontImage: fFront,
+                backImage: fBack,
+              },
+            },
+          });
+        }
         return;
       }
       
@@ -438,12 +481,18 @@ const LicenseInformation = () => {
 
   // Prefill from rejected API doc when resubmitting from Verified Account
   React.useEffect(() => {
+    if (hasPrefilledRef.current) return;
     const fromVerified = location.state?.fromVerifiedAccount;
     const rejectedList = location.state?.rejectedDocuments;
-    if (!fromVerified || !Array.isArray(rejectedList)) return;
-    const item = rejectedList.find((r) => r?.key === 'driverLicense');
-    const doc = item?.doc;
+    let doc = null;
+    if (fromVerified && Array.isArray(rejectedList)) {
+      const item = rejectedList.find((r) => (typeof r === 'string' ? r === 'driverLicense' : r?.key === 'driverLicense'));
+      doc = item?.doc || user?.driverLicense;
+    } else {
+      doc = user?.driverLicense;
+    }
     if (!doc) return;
+    hasPrefilledRef.current = true;
     const meta = doc.metadata || {};
     const num =
       meta.licenseNumber != null && String(meta.licenseNumber).trim() !== ''
@@ -462,8 +511,7 @@ const LicenseInformation = () => {
     }
     if (doc.frontImage) setFrontImagePreview(doc.frontImage);
     if (doc.backImage) setBackImagePreview(doc.backImage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, location.state]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {

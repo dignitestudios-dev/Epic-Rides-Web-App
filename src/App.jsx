@@ -1,4 +1,7 @@
-import { Route, Routes, Navigate } from "react-router";
+import React, { useEffect } from "react";
+import { Route, Routes, Navigate, useLocation } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import "./App.css";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DummyHome from "./pages/app/DummyHome";
@@ -20,8 +23,55 @@ import RideCancelled from "./pages/tracking/RideCancelled";
 import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
+import { getAccountStatus, hydrateAuthFromCookies } from "./redux/slices/auth.slice";
 
 function App() {
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const { isAccountStatusInitialized, accountStatus } = useSelector((state) => state.auth);
+  const token = Cookies.get("token");
+
+  // Initial load: Hydrate auth and fetch account status ONCE on application start / reload
+  useEffect(() => {
+    dispatch(hydrateAuthFromCookies());
+    const authToken = Cookies.get("token");
+    if (authToken) {
+      dispatch(getAccountStatus());
+    }
+  }, [dispatch]);
+
+  // Scoped background polling: ONLY active on /subscription and /verified-account, and ONLY if NOT approved
+  useEffect(() => {
+    const authToken = Cookies.get("token");
+    const isPollingRoute =
+      location.pathname === "/subscription" ||
+      location.pathname === "/verified-account";
+
+    if (authToken && isPollingRoute && accountStatus !== "approved") {
+      const intervalId = setInterval(() => {
+        dispatch(getAccountStatus());
+      }, 10000);
+      return () => clearInterval(intervalId);
+    }
+  }, [dispatch, location.pathname, accountStatus]);
+
+  // Show full-screen loading spinner on initial load when token exists until status resolves
+  if (token && !isAccountStatusInitialized) {
+    return (
+      <div className="relative w-full min-h-screen bg-black flex flex-col items-center justify-center">
+        <div className="relative w-24 h-24 flex items-center justify-center">
+          <div
+            className="absolute inset-0 border-4 rounded-full animate-spin"
+            style={{
+              borderColor: "#61CB08",
+              borderTopColor: "transparent",
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route

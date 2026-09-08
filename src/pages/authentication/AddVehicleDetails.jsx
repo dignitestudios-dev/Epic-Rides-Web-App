@@ -14,11 +14,34 @@ import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { barthree } from '../../assets/export';
 import { GoAlertFill } from "react-icons/go";
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
-import { isDocumentRoute } from '../../utils/onboardingRedirect';
+import { isDocumentRoute, hasActiveSubscription, hasRejectedDocuments, buildRejectedDocumentsPayload } from '../../utils/onboardingRedirect';
 
 const LICENSE_PLATE_REGEX = /^[A-Z0-9]{1,7}$/;
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/;
 const REGISTRATION_NUMBER_REGEX = /^[A-Z0-9]{1,8}$/;
+
+const findMatchingVehicleTypeOption = (options, targetType) => {
+  if (!Array.isArray(options) || options.length === 0 || !targetType) return null;
+  const target = String(targetType).trim().toLowerCase();
+  return (
+    options.find((opt) => {
+      const val = String(opt.value || '').trim().toLowerCase();
+      const id = String(opt.id || '').trim().toLowerCase();
+      const model = String(opt.model || '').trim().toLowerCase();
+      const rideType = String(opt.rideType || '').trim().toLowerCase();
+      const apiValue = String(opt.apiValue || '').trim().toLowerCase();
+      const label = String(opt.label || '').trim().toLowerCase();
+      return (
+        val === target ||
+        id === target ||
+        model === target ||
+        rideType === target ||
+        apiValue === target ||
+        label === target
+      );
+    }) || null
+  );
+};
 
 /** API may send ISO datetime; <input type="date"> needs YYYY-MM-DD. */
 function normalizeRegistrationExpiryForInput(value) {
@@ -95,6 +118,8 @@ const AddVehicleDetails = () => {
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const hasPrefilledRef = React.useRef(false);
+  const hasSelectedVehicleTypeRef = React.useRef(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -191,6 +216,7 @@ const AddVehicleDetails = () => {
   };
 
   const handleVehicleTypeSelect = (type) => {
+    hasSelectedVehicleTypeRef.current = true;
     setVehicleDetails(prev => ({
       ...prev,
       vehicleType: type
@@ -303,12 +329,13 @@ const AddVehicleDetails = () => {
       return;
     }
 
-    const selectedVehicleType = vehicleTypeOptions.find(
-      (item) => item.value === vehicleDetails.vehicleType
+    const selectedVehicleType = findMatchingVehicleTypeOption(
+      vehicleTypeOptions,
+      vehicleDetails.vehicleType
     );
     const payloadVehicleDetails = {
       ...vehicleDetails,
-      vehicleType: selectedVehicleType?.apiValue || vehicleDetails.vehicleType,
+      vehicleType: selectedVehicleType?.apiValue || selectedVehicleType?.model || selectedVehicleType?.rideType || vehicleDetails.vehicleType,
     };
 
     try {
@@ -330,13 +357,16 @@ const AddVehicleDetails = () => {
       const currentIndex = location.state?.currentIndex ?? 0;
 
       if (fromVerified && Array.isArray(rejectedFlow) && rejectedFlow.length > 0) {
-        // Route by real progress, not by position in the rejected list: the driver may still
-        // owe another rejected document, or one that was never uploaded at all. Only when
-        // nothing is outstanding does this resolve to /subscription or /verified-account.
-        const nextRoute = getFirstIncompleteStep();
+        const routeMap = {
+          driverLicense: '/license-information',
+          vehicleRegistration: '/vehicle-details',
+          insurance: '/insurance-information',
+          vehicleDetails: '/add-vehicle-details',
+        };
         const nextIndex = currentIndex + 1;
-
-        if (isDocumentRoute(nextRoute)) {
+        if (nextIndex < rejectedFlow.length) {
+          const nextKey = rejectedFlow[nextIndex];
+          const nextRoute = routeMap[nextKey] || '/verified-account';
           navigate(nextRoute, {
             state: {
               formData,
@@ -353,7 +383,84 @@ const AddVehicleDetails = () => {
           return;
         }
 
-        navigate(nextRoute, {
+        const currentUser = result?.user || user;
+        const currentAccountStatus = result?.accountStatus;
+        const currentRejectedDocs = result?.rejectedDocuments || [];
+
+        // If admin rejected any document in between, redirect immediately to /verified-account
+        if (
+          currentAccountStatus === 'rejected' ||
+          hasRejectedDocuments(currentUser, currentRejectedDocs)
+        ) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData,
+              vehicleDetails: payloadVehicleDetails,
+              status: 'rejected',
+              rejectedDocuments: buildRejectedDocumentsPayload(currentUser, currentRejectedDocs),
+            },
+          });
+          return;
+        }
+
+        if (hasActiveSubscription(currentUser)) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData,
+              vehicleDetails: payloadVehicleDetails,
+              status: 'submitted',
+            },
+          });
+        } else {
+          navigate('/subscription', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData,
+              vehicleDetails: payloadVehicleDetails,
+            },
+          });
+        }
+        return;
+      }
+
+      // Normal flow: check if anything got rejected in between
+      const currentUser = result?.user || user;
+      const currentAccountStatus = result?.accountStatus;
+      const currentRejectedDocs = result?.rejectedDocuments || [];
+
+      if (
+        currentAccountStatus === 'rejected' ||
+        hasRejectedDocuments(currentUser, currentRejectedDocs)
+      ) {
+        navigate('/verified-account', {
+          replace: true,
+          state: {
+            formData,
+            licenseData,
+            vehicleData,
+            insuranceData,
+            vehicleDetails: payloadVehicleDetails,
+            status: 'rejected',
+            rejectedDocuments: buildRejectedDocumentsPayload(currentUser, currentRejectedDocs),
+          },
+        });
+        return;
+      }
+
+      if (hasActiveSubscription(currentUser)) {
+        navigate('/verified-account', {
+          replace: true,
           state: {
             formData,
             licenseData,
@@ -363,12 +470,9 @@ const AddVehicleDetails = () => {
             status: 'submitted',
           },
         });
-        return;
-      }
-
-      // Normal flow: add-vehicle-details → subscription → verified-account
-      if (result?.message) {
+      } else {
         navigate('/subscription', {
+          replace: true,
           state: {
             formData,
             licenseData,
@@ -397,12 +501,18 @@ const AddVehicleDetails = () => {
   };
 
   React.useEffect(() => {
+    if (hasPrefilledRef.current) return;
     const fromVerified = location.state?.fromVerifiedAccount;
     const rejectedList = location.state?.rejectedDocuments;
-    if (!fromVerified || !Array.isArray(rejectedList)) return;
-    const item = rejectedList.find((r) => r?.key === 'vehicleDetails');
-    const doc = item?.doc;
+    let doc = null;
+    if (fromVerified && Array.isArray(rejectedList)) {
+      const item = rejectedList.find((r) => (typeof r === 'string' ? r === 'vehicleDetails' : r?.key === 'vehicleDetails'));
+      doc = item?.doc || user?.vehicleDetails;
+    } else {
+      doc = user?.vehicleDetails;
+    }
     if (!doc) return;
+    hasPrefilledRef.current = true;
     const meta = doc.metadata && typeof doc.metadata === 'object' ? doc.metadata : {};
     const formKeys = new Set([
       'make',
@@ -437,10 +547,13 @@ const AddVehicleDetails = () => {
       if (expiry != null && expiry !== '') {
         next.registrationExpiryDate = normalizeRegistrationExpiryForInput(expiry);
       }
+      const rawType = apiMerged.vehicleType || user?.vehicleType;
+      if (rawType != null && rawType !== '') {
+        next.vehicleType = String(rawType);
+      }
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, location.state]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
@@ -495,21 +608,37 @@ const AddVehicleDetails = () => {
     dispatch(getVehicleTypes());
   }, [dispatch]);
 
-  // Default-select first vehicle type once options are loaded
+  // Match & select vehicle type once options or user data are loaded
   React.useEffect(() => {
     if (isVehicleTypesLoading || vehicleTypeOptions.length === 0) return;
+    if (hasSelectedVehicleTypeRef.current) return;
 
-    const firstValue = vehicleTypeOptions[0]?.value;
-    if (!firstValue) return;
+    const fromVerified = location.state?.fromVerifiedAccount;
+    const rejectedList = location.state?.rejectedDocuments;
+    const item = fromVerified && Array.isArray(rejectedList)
+      ? rejectedList.find((r) => (typeof r === 'string' ? r === 'vehicleDetails' : r?.key === 'vehicleDetails'))
+      : null;
+    const doc = item?.doc || user?.vehicleDetails;
 
-    setVehicleDetails((prev) => {
-      const stillValid =
-        prev.vehicleType &&
-        vehicleTypeOptions.some((opt) => opt.value === prev.vehicleType);
-      if (stillValid) return prev;
-      return { ...prev, vehicleType: firstValue };
-    });
-  }, [isVehicleTypesLoading, vehicleTypeOptions]);
+    const targetType =
+      vehicleDetails.vehicleType ||
+      doc?.vehicleType ||
+      doc?.metadata?.vehicleType ||
+      user?.vehicleType;
+
+    const matched = findMatchingVehicleTypeOption(vehicleTypeOptions, targetType);
+
+    if (matched) {
+      hasSelectedVehicleTypeRef.current = true;
+      setVehicleDetails((prev) => ({ ...prev, vehicleType: matched.value }));
+    } else if (!vehicleDetails.vehicleType) {
+      const firstValue = vehicleTypeOptions[0]?.value;
+      if (firstValue) {
+        hasSelectedVehicleTypeRef.current = true;
+        setVehicleDetails((prev) => ({ ...prev, vehicleType: firstValue }));
+      }
+    }
+  }, [isVehicleTypesLoading, vehicleTypeOptions, user, location.state]);
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden overflow-y-hidden">
@@ -794,15 +923,41 @@ const AddVehicleDetails = () => {
                 Vehicle Type
               </label>
               {isVehicleTypesLoading ? (
-                <div className="w-full px-4 py-3 rounded-xl border border-[#61CB08]/40 bg-[#61CB08]/10">
-                  <p className="font-poppins text-xs md:text-sm text-[#61CB08] text-center">
-                    Loading vehicles...
-                  </p>
+                <div className="flex flex-wrap items-center gap-2.5 md:gap-3 w-full justify-start">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="relative flex flex-col items-center justify-between pt-3 pb-2.5 px-2 shrink-0 animate-pulse"
+                      style={{
+                        width: '92px',
+                        height: '94px',
+                        background:
+                          'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
+                        backdropFilter: 'blur(34px)',
+                        borderRadius: '9.72px',
+                        border: '1px solid rgba(97, 203, 8, 0.25)',
+                      }}
+                    >
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 border border-[#61CB08]/30 rounded-md bg-[#61CB08]/5"></div>
+
+                      <div className="w-full flex-1 flex items-center justify-center pt-1">
+                        <div className="w-[56px] h-[30px] bg-white/10 rounded-md"></div>
+                      </div>
+
+                      <div className="w-12 h-2.5 bg-white/15 rounded"></div>
+                    </div>
+                  ))}
                 </div>
               ) : hasVehicleTypes ? (
                 <div className="flex flex-wrap items-center gap-2.5 md:gap-3 w-full justify-start">
                   {vehicleTypeOptions.map((type) => {
-                    const isSelected = vehicleDetails.vehicleType === type.value;
+                    const isSelected =
+                      vehicleDetails.vehicleType === type.value ||
+                      vehicleDetails.vehicleType === type.id ||
+                      String(vehicleDetails.vehicleType || '').toLowerCase() === String(type.model || '').toLowerCase() ||
+                      String(vehicleDetails.vehicleType || '').toLowerCase() === String(type.rideType || '').toLowerCase() ||
+                      String(vehicleDetails.vehicleType || '').toLowerCase() === String(type.apiValue || '').toLowerCase() ||
+                      String(vehicleDetails.vehicleType || '').toLowerCase() === String(type.label || '').toLowerCase();
                     return (
                       <button
                         key={type.id}

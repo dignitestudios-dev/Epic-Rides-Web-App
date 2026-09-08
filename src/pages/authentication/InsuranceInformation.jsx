@@ -12,7 +12,7 @@ import LogoutButton from '../../components/global/LogoutButton';
 import TopRightLogoutButton from '../../components/global/TopRightLogoutButton';
 import { bartwo } from '../../assets/export';
 import { markStepCompleted, STEPS, arePreviousStepsCompleted, getFirstIncompleteStep, clearAllSteps, isStepCompleted } from '../../utils/stepValidation';
-import { isDocumentRoute } from '../../utils/onboardingRedirect';
+import { isDocumentRoute, hasActiveSubscription, hasRejectedDocuments, buildRejectedDocumentsPayload } from '../../utils/onboardingRedirect';
 import { fetchUrlAsFile } from '../../utils/rejectedFlowPrefill';
 import { ImageFileInputs, MobileTakePhotoButton } from '../../components/global/ImageFileInputs';
 
@@ -30,6 +30,7 @@ const InsuranceInformation = () => {
   const [insuranceBackImage, setInsuranceBackImage] = useState(null);
   const [insuranceBackImagePreview, setInsuranceBackImagePreview] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const hasPrefilledRef = React.useRef(false);
 
   console.log(user,"userdata")
 
@@ -189,13 +190,16 @@ const InsuranceInformation = () => {
       const currentIndex = location.state?.currentIndex ?? 0;
       
       if (fromVerified && Array.isArray(rejectedFlow) && rejectedFlow.length > 0) {
-        // Route by real progress, not by position in the rejected list: the driver may still
-        // owe another rejected document, or one that was never uploaded at all. Only when
-        // nothing is outstanding does this resolve to /subscription or /verified-account.
-        const nextRoute = getFirstIncompleteStep();
+        const routeMap = {
+          driverLicense: '/license-information',
+          vehicleRegistration: '/vehicle-details',
+          insurance: '/insurance-information',
+          vehicleDetails: '/add-vehicle-details',
+        };
         const nextIndex = currentIndex + 1;
-
-        if (isDocumentRoute(nextRoute)) {
+        if (nextIndex < rejectedFlow.length) {
+          const nextKey = rejectedFlow[nextIndex];
+          const nextRoute = routeMap[nextKey] || '/verified-account';
           navigate(nextRoute, {
             state: {
               formData,
@@ -211,15 +215,50 @@ const InsuranceInformation = () => {
           return;
         }
 
-        navigate(nextRoute, {
-          state: {
-            formData,
-            licenseData,
-            vehicleData,
-            insuranceData: { frontImage: frontFile, backImage: backFile },
-            status: 'submitted',
-          },
-        });
+        const currentUser = result?.user || user;
+        const currentAccountStatus = result?.accountStatus;
+        const currentRejectedDocs = result?.rejectedDocuments || [];
+
+        if (
+          currentAccountStatus === 'rejected' ||
+          hasRejectedDocuments(currentUser, currentRejectedDocs)
+        ) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData: { frontImage: frontFile, backImage: backFile },
+              status: 'rejected',
+              rejectedDocuments: buildRejectedDocumentsPayload(currentUser, currentRejectedDocs),
+            },
+          });
+          return;
+        }
+
+        if (hasActiveSubscription(currentUser)) {
+          navigate('/verified-account', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData: { frontImage: frontFile, backImage: backFile },
+              status: 'submitted',
+            },
+          });
+        } else {
+          navigate('/subscription', {
+            replace: true,
+            state: {
+              formData,
+              licenseData,
+              vehicleData,
+              insuranceData: { frontImage: frontFile, backImage: backFile },
+            },
+          });
+        }
         return;
       }
 
@@ -228,7 +267,7 @@ const InsuranceInformation = () => {
           state: { 
             formData, 
             licenseData, 
-            vehicleData,
+            vehicleData, 
             insuranceData: { frontImage: frontFile, backImage: backFile }
           } 
         });
@@ -252,19 +291,24 @@ const InsuranceInformation = () => {
   };
 
   React.useEffect(() => {
+    if (hasPrefilledRef.current) return;
     const fromVerified = location.state?.fromVerifiedAccount;
     const rejectedList = location.state?.rejectedDocuments;
-    if (!fromVerified || !Array.isArray(rejectedList)) return;
-    const item = rejectedList.find((r) => r?.key === 'insurance');
-    const doc = item?.doc;
+    let doc = null;
+    if (fromVerified && Array.isArray(rejectedList)) {
+      const item = rejectedList.find((r) => (typeof r === 'string' ? r === 'insurance' : r?.key === 'insurance'));
+      doc = item?.doc || user?.insurance;
+    } else {
+      doc = user?.insurance;
+    }
     if (!doc) return;
+    hasPrefilledRef.current = true;
     if (doc.frontImage) setInsuranceFrontImagePreview(doc.frontImage);
     if (doc.backImage) setInsuranceBackImagePreview(doc.backImage);
     if (!doc.frontImage && !doc.backImage && doc.documentUrl) {
       setInsuranceFrontImagePreview(doc.documentUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, location.state]);
 
   // Redirect logic: Check step validation and user authentication
   React.useEffect(() => {
