@@ -555,16 +555,19 @@ const authSlice = createSlice({
       if (token) {
         state.token = token;
         state.isAuthenticated = true;
+      } else {
+        state.token = null;
+        state.isAuthenticated = false;
+        state.user = null;
       }
       const userRaw = Cookies.get("user");
-      if (userRaw) {
+      if (userRaw && token) {
         try {
           const parsed = JSON.parse(userRaw);
           if (parsed && typeof parsed === "object") {
             state.user = parsed;
             state.isOnboarded = parsed.isOnboarded !== undefined ? Boolean(parsed.isOnboarded) : false;
             state.accountStatus = parsed.accountStatus || state.accountStatus;
-            state.isAuthenticated = Boolean(state.token);
           }
         } catch {
           // ignore invalid cookie JSON

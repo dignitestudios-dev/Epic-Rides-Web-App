@@ -34,7 +34,7 @@ export default function EpicRidesLogin() {
   const cookieToken = Cookies.get('token');
 
   React.useEffect(() => {
-    if ((token || cookieToken) && isAccountStatusInitialized && user) {
+    if (cookieToken && isAccountStatusInitialized && user) {
       const { path, state } = resolvePostLoginRoute({
         user,
         accountStatus,
@@ -46,7 +46,6 @@ export default function EpicRidesLogin() {
       navigate(path, { replace: true, state });
     }
   }, [
-    token,
     cookieToken,
     isAccountStatusInitialized,
     user,
