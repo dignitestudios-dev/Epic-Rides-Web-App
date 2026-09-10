@@ -248,9 +248,15 @@ export const resolvePostLoginRoute = ({
     return { path: docRoute };
   }
 
-  // 4. Approved profile -> Direct to subscription screen
+  // 4. Approved profile -> If active subscription, show approved on verified-account; else go to subscription to buy
   if (accountStatus === 'approved' || areAllDocumentsApproved(user)) {
     syncCompletedStepsFromUser(user, isOnboarded);
+    if (hasActiveSubscription(user)) {
+      return {
+        path: '/verified-account',
+        state: { status: 'approved' },
+      };
+    }
     return { path: '/subscription' };
   }
 

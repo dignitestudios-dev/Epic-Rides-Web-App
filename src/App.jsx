@@ -40,19 +40,13 @@ function App() {
     }
   }, [dispatch, location.pathname]);
 
-  // Background polling: Active on /subscription and /verified-account every 10 seconds UNLESS profile is approved
+  // Background polling: Active on /subscription and /verified-account every 10 seconds
   useEffect(() => {
     const isPollingRoute =
       location.pathname === "/subscription" ||
       location.pathname === "/verified-account";
 
-    const isApproved =
-      accountStatus === "approved" ||
-      user?.accountStatus === "approved" ||
-      (user && areAllDocumentsApproved(user));
-
-    // When profile is approved, polling does not run
-    if (!isPollingRoute || isApproved) return;
+    if (!isPollingRoute) return;
 
     const intervalId = setInterval(() => {
       const authToken = Cookies.get("token");
@@ -62,7 +56,7 @@ function App() {
     }, 10000);
 
     return () => clearInterval(intervalId);
-  }, [dispatch, location.pathname, accountStatus, user]);
+  }, [dispatch, location.pathname]);
 
   // Show branded loading screen on initial load when token exists until status resolves
   if (token && !isAccountStatusInitialized) {

@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../axios";
 import Cookies from "js-cookie";
 import { ErrorToast, SuccessToast } from "../../components/global/Toaster";
+import { syncCompletedStepsFromUser } from "../../utils/onboardingRedirect";
 
 // ================= INITIAL STATE =================
 const initialState = {
@@ -653,6 +654,7 @@ const authSlice = createSlice({
         state.rejectedDocuments = action.payload.rejectedDocuments || [];
         state.missingDocuments = action.payload.missingDocuments || [];
         state.error = null;
+        syncCompletedStepsFromUser(state.user, state.isOnboarded);
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
@@ -682,6 +684,7 @@ const authSlice = createSlice({
           state.isAuthenticated = true;
           state.token = Cookies.get("token");
         }
+        syncCompletedStepsFromUser(state.user, state.isOnboarded);
       })
       .addCase(getAccountStatus.rejected, (state, action) => {
         state.isAccountStatusLoading = false;

@@ -68,7 +68,7 @@ const Subscription = () => {
         vehicleData: extraState.vehicleData ?? vehicleData,
         insuranceData: extraState.insuranceData ?? insuranceData,
         vehicleDetails: extraState.vehicleDetails ?? vehicleDetails,
-        status: 'submitted',
+        status: areAllDocumentsApproved(user) ? 'approved' : 'submitted',
         fromSubscription: true,
       },
     });
@@ -183,6 +183,12 @@ const Subscription = () => {
       return;
     }
 
+    // 3. If user ALREADY has an active subscription, go directly to verified-account
+    if (hasActiveSubscription(user)) {
+      goToVerifiedAfterSubscription();
+      return;
+    }
+
     const fetchSubscriptionDetails = async () => {
       const driverId = resolveDriverId(user);
       const detailsPath = getSubscriptionDetailsPath(driverId);
@@ -197,6 +203,8 @@ const Subscription = () => {
           setSubscriptionDetails(sub);
           if (sub?.status === 'active') {
             markStepCompleted(STEPS.SUBSCRIPTION);
+            goToVerifiedAfterSubscription();
+            return;
           }
         }
       } catch (error) {
