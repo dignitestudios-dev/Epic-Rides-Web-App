@@ -27,7 +27,10 @@ export const areAllDocumentsApproved = (user) => {
 
 /** Subscription purchased and active (missing `subscription` on user = not bought). */
 export const hasActiveSubscription = (user) =>
-  user?.subscription?.status === 'active';
+  user?.subscription?.status === 'active' ||
+  user?.subscription === 'active' ||
+  user?.isSubscribed === true ||
+  user?.subscriptionStatus === 'active';
 
 export const needsSubscriptionPurchase = (user) => !hasActiveSubscription(user);
 
@@ -248,9 +251,15 @@ export const resolvePostLoginRoute = ({
     return { path: docRoute };
   }
 
-  // 4. Approved profile -> Direct to subscription screen
+  // 4. Approved profile -> If active subscription, show approved on verified-account; else go to subscription to buy
   if (accountStatus === 'approved' || areAllDocumentsApproved(user)) {
     syncCompletedStepsFromUser(user, isOnboarded);
+    if (hasActiveSubscription(user)) {
+      return {
+        path: '/verified-account',
+        state: { status: 'approved' },
+      };
+    }
     return { path: '/subscription' };
   }
 

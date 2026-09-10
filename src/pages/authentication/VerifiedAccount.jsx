@@ -12,7 +12,13 @@ import {
   getFirstIncompleteStep,
   clearAllSteps,
 } from '../../utils/stepValidation';
-import { hasActiveSubscription, isDocumentRoute, areAllDocumentsApproved } from '../../utils/onboardingRedirect';
+import {
+  hasActiveSubscription,
+  isDocumentRoute,
+  areAllDocumentsApproved,
+  hasRejectedDocuments,
+  buildRejectedDocumentsPayload,
+} from '../../utils/onboardingRedirect';
 import { clearSubscriptionCheckoutSession } from '../../utils/subscriptionCheckout';
 import { getAccountStatus } from '../../redux/slices/auth.slice';
 
@@ -76,61 +82,25 @@ const VerifiedAccount = () => {
 
   // Dynamic resolved rejected documents list from Redux polling + user object + route state
   const resolvedRejectedDocs = React.useMemo(() => {
-    const orderedKeys = ['driverLicense', 'vehicleRegistration', 'insurance', 'vehicleDetails'];
-    const rejectedMap = new Map();
-
-    // 1. Redux rejectedDocuments array (kept fresh by global polling)
-    if (Array.isArray(rejectedDocumentsRedux)) {
-      rejectedDocumentsRedux.forEach((d) => {
-        const key = typeof d === 'string' ? d : d?.key;
-        if (key && orderedKeys.includes(key)) {
-          rejectedMap.set(key, {
-            key,
-            rejectReason: typeof d === 'object' ? (d?.rejectReason || d?.rejectionReason || d?.reason || '') : '',
-            doc: typeof d === 'object' ? d?.doc || user?.[key] || null : user?.[key] || null,
-          });
-        }
-      });
-    }
-
-    // 2. User object document statuses from Redux
-    if (user) {
-      orderedKeys.forEach((key) => {
-        if (user[key]?.status === 'rejected') {
-          const existing = rejectedMap.get(key) || {};
-          rejectedMap.set(key, {
-            key,
-            rejectReason: (typeof existing.rejectReason === 'string' && existing.rejectReason.trim()) || user[key]?.rejectReason || user[key]?.rejectionReason || '',
-            doc: user[key] || existing.doc || null,
-          });
-        }
-      });
-    }
-
-    // 3. Location state rejectedDocuments (as fallback if state has extra reasons)
-    if (Array.isArray(rejectedDocsFromState)) {
-      rejectedDocsFromState.forEach((d) => {
-        const key = typeof d === 'string' ? d : d?.key;
-        if (key && orderedKeys.includes(key)) {
-          const existing = rejectedMap.get(key) || {};
-          rejectedMap.set(key, {
-            key,
-            rejectReason: (typeof existing.rejectReason === 'string' && existing.rejectReason.trim()) || (typeof d === 'object' ? (d?.rejectReason || d?.rejectionReason || d?.reason || '') : ''),
-            doc: existing.doc || (typeof d === 'object' ? d?.doc : null) || user?.[key] || null,
-          });
-        }
-      });
-    }
-
-    return orderedKeys.filter((key) => rejectedMap.has(key)).map((key) => rejectedMap.get(key));
+    const combinedList = [
+      ...(Array.isArray(rejectedDocumentsRedux) ? rejectedDocumentsRedux : []),
+      ...(Array.isArray(rejectedDocsFromState) ? rejectedDocsFromState : []),
+    ];
+    return buildRejectedDocumentsPayload(user, combinedList);
   }, [user, rejectedDocumentsRedux, rejectedDocsFromState]);
 
   // Directly derive account state from Redux (kept fresh by global polling & upload thunks)
-  const hasRejectedDocs = reduxAccountStatus === 'rejected' || resolvedRejectedDocs.length > 0;
+  const hasRejectedDocs =
+    reduxAccountStatus === 'rejected' ||
+    user?.accountStatus === 'rejected' ||
+    hasRejectedDocuments(user, rejectedDocumentsRedux) ||
+    resolvedRejectedDocs.length > 0;
 
   const isApproved =
-    reduxAccountStatus === 'approved' ||
-    (user && areAllDocumentsApproved(user));
+    !hasRejectedDocs &&
+    (reduxAccountStatus === 'approved' ||
+      user?.accountStatus === 'approved' ||
+      (user && areAllDocumentsApproved(user)));
 
   const currentStatus = isApproved ? 'approved' : hasRejectedDocs ? 'rejected' : 'submitted';
 
@@ -164,13 +134,6 @@ const VerifiedAccount = () => {
     const nextRoute = getFirstIncompleteStep();
     if (isDocumentRoute(nextRoute)) {
       navigate(nextRoute, { replace: true });
-      return;
-    }
-
-    // Must have active subscription before accessing verified-account
-    if (user && !hasActiveSubscription(user)) {
-      clearSubscriptionCheckoutSession();
-      navigate('/subscription', { replace: true });
       return;
     }
   }, [user, hasRejectedDocs, navigate]);

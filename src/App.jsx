@@ -21,6 +21,7 @@ import RideCancelled from "./pages/tracking/RideCancelled";
 import Paymentsuccessfully from "./pages/authentication/Completesetup";
 import Completedetup from "./pages/authentication/Completesetup";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/global/ProtectedRoute";
 import { getAccountStatus, hydrateAuthFromCookies } from "./redux/slices/auth.slice";
 import { areAllDocumentsApproved } from "./utils/onboardingRedirect";
 import { loginbackgroundimage } from "./assets/export";
@@ -40,19 +41,13 @@ function App() {
     }
   }, [dispatch, location.pathname]);
 
-  // Background polling: Active on /subscription and /verified-account every 10 seconds UNLESS profile is approved
+  // Background polling: Active on /subscription and /verified-account every 10 seconds
   useEffect(() => {
     const isPollingRoute =
       location.pathname === "/subscription" ||
       location.pathname === "/verified-account";
 
-    const isApproved =
-      accountStatus === "approved" ||
-      user?.accountStatus === "approved" ||
-      (user && areAllDocumentsApproved(user));
-
-    // When profile is approved, polling does not run
-    if (!isPollingRoute || isApproved) return;
+    if (!isPollingRoute) return;
 
     const intervalId = setInterval(() => {
       const authToken = Cookies.get("token");
@@ -62,10 +57,10 @@ function App() {
     }, 10000);
 
     return () => clearInterval(intervalId);
-  }, [dispatch, location.pathname, accountStatus, user]);
+  }, [dispatch, location.pathname]);
 
-  // Show branded loading screen on initial load when token exists until status resolves
-  if (token && !isAccountStatusInitialized) {
+  // Show branded loading screen on initial load when token exists on root/login until status resolves
+  if (token && !isAccountStatusInitialized && location.pathname === "/") {
     return (
       <div className="relative w-full min-h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-poppins px-4">
         {/* Background Image with Car Watermark and Lights */}
@@ -117,56 +112,80 @@ function App() {
         element={<Login />}
       />
 
-      {/* STEP 1 */}
+      {/* STEP 1 - Unprotected signup */}
       <Route
         path="signup"
         element={<Signup />}
       />
 
-      {/* STEP 2 */}
+      {/* STEP 2 - Protected */}
       <Route
         path="license-information"
-        element={<LicenseInformation />}
+        element={
+          <ProtectedRoute>
+            <LicenseInformation />
+          </ProtectedRoute>
+        }
       />
 
-      {/* STEP 3 */}
+      {/* STEP 3 - Protected */}
       <Route
         path="vehicle-details"
-        element={<VehicleDetails />}
+        element={
+          <ProtectedRoute>
+            <VehicleDetails />
+          </ProtectedRoute>
+        }
       />
 
-      {/* STEP 4 */}
+      {/* STEP 4 - Protected */}
       <Route
         path="insurance-information"  
-        element={<InsuranceInformation />}
+        element={
+          <ProtectedRoute>
+            <InsuranceInformation />
+          </ProtectedRoute>
+        }
       />
 
-      {/* STEP 5 */}
+      {/* STEP 5 - Protected */}
       <Route
         path="add-vehicle-details"
-        element={<AddVehicleDetails />}
+        element={
+          <ProtectedRoute>
+            <AddVehicleDetails />
+          </ProtectedRoute>
+        }
       />
 
-{/* STEP 6 */}
+      {/* STEP 6 - Protected */}
       <Route
         path="verified-account"
-        element={<VerifiedAccount />}
+        element={
+          <ProtectedRoute>
+            <VerifiedAccount />
+          </ProtectedRoute>
+        }
       />
 
- {/* STEP 7 */}
+      {/* STEP 7 - Protected */}
       <Route
         path="subscription"
-        element={<Subscription />}
+        element={
+          <ProtectedRoute>
+            <Subscription />
+          </ProtectedRoute>
+        }
       />
 
+      {/* Unprotected OTP Verification */}
       <Route
         path="verification"
         element={<Verification />}
       />
 
-
+      {/* Public Tracking Routes */}
       <Route path="share" element={<ShareTracking />} />
-      {/* Test: http://localhost:5173/share/demo-carpool */}
       <Route
         path="share/demo-carpool"
         element={
@@ -180,7 +199,14 @@ function App() {
       <Route path="ride-ended" element={<RideEnded />} />
       <Route path="ride-cancelled" element={<RideCancelled />} />
 
-      <Route path="complete-setup" element={<Completedetup/>}/>
+      <Route
+        path="complete-setup"
+        element={
+          <ProtectedRoute>
+            <Completedetup />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="auth" element={<AuthLayout />}>
         <Route path="login" element={<DummyLogin />} />

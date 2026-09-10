@@ -68,7 +68,7 @@ const Subscription = () => {
         vehicleData: extraState.vehicleData ?? vehicleData,
         insuranceData: extraState.insuranceData ?? insuranceData,
         vehicleDetails: extraState.vehicleDetails ?? vehicleDetails,
-        status: 'submitted',
+        status: areAllDocumentsApproved(user) ? 'approved' : 'submitted',
         fromSubscription: true,
       },
     });
