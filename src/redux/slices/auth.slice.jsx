@@ -157,7 +157,22 @@ export const getAccountStatus = createAsyncThunk(
         missingDocuments: data?.missingDocuments || [],
       };
     } catch (e) {
+      const status = e.response?.status;
       const errorMessage = e.response?.data?.message || e.message || "Failed to fetch account status";
+
+      // When account status returns 401, auto logout user
+      if (status === 401) {
+        if (window.location.pathname !== "/verification") {
+          Cookies.remove("token");
+          Cookies.remove("user");
+          localStorage.removeItem("verifiedPhone");
+          localStorage.removeItem("completedSteps");
+          localStorage.removeItem("persist:root");
+          ErrorToast("Session expired. Please login again.");
+          window.location.replace("/");
+        }
+      }
+
       return thunkAPI.rejectWithValue(errorMessage);
     }
   }

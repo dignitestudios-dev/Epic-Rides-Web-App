@@ -94,26 +94,16 @@ instance.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 401) {
-      const onboardingPaths = [
-        "/signup",
-        "/license-information",
-        "/vehicle-details",
-        "/insurance-information",
-        "/add-vehicle-details",
-        "/subscription",
-        "/verified-account",
-        "/verification",
-        "/complete-setup",
-      ];
-      const path = window.location.pathname;
-      const onOnboarding = onboardingPaths.includes(path);
       const skipRedirect = error.config?.skipAuthRedirect === true;
 
-      if (!onOnboarding && !skipRedirect) {
+      if (!skipRedirect && window.location.pathname !== "/verification") {
         Cookies.remove("token");
         Cookies.remove("user");
-        ErrorToast("Session expired. Please relogin");
-        window.location.href = "/";
+        localStorage.removeItem("verifiedPhone");
+        localStorage.removeItem("completedSteps");
+        localStorage.removeItem("persist:root");
+        ErrorToast("Session expired. Please login again.");
+        window.location.replace("/");
       }
     }
 
