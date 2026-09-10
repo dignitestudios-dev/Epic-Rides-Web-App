@@ -42,6 +42,15 @@ const LicenseInformation = () => {
     return `${yyyy}-${mm}-${dd}`;
   };
 
+  // Get max date — 10 years from today
+  const getMaxDate = () => {
+    const today = new Date();
+    const year = today.getFullYear() + 10;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [licenseData, setLicenseData] = useState({
     licenseNumber: '',
     expiryDate: ''
@@ -51,6 +60,8 @@ const LicenseInformation = () => {
   const [backImage, setBackImage] = useState(null);
   const [backImagePreview, setBackImagePreview] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isDateFocused, setIsDateFocused] = useState(false);
+  const dateInputRef = React.useRef(null);
   const hasPrefilledRef = React.useRef(false);
 
   // Field-level error states
@@ -75,9 +86,17 @@ const LicenseInformation = () => {
       if (!value) {
         error = 'This field is required';
       } else {
+        const parts = value.split('-');
+        const year = parseInt(parts[0], 10);
         const minExpiry = getMinExpiryDate();
-        if (value < minExpiry) {
+        const maxExpiry = getMaxDate();
+
+        if (parts.length !== 3 || parts[0].length !== 4 || isNaN(year) || year < 1000) {
+          error = 'Please enter a valid expiry date';
+        } else if (value < minExpiry) {
           error = 'Expiry date must be at least 1 month in the future';
+        } else if (value > maxExpiry) {
+          error = 'Expiry date cannot be more than 10 years from today';
         }
       }
     }
@@ -103,6 +122,41 @@ const LicenseInformation = () => {
       }));
       // Validate on change
       validateField(name, limitedValue);
+    } else if (name === 'expiryDate') {
+      setLicenseData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+
+      // While user is actively typing, only validate if they entered a complete date
+      // (YYYY-MM-DD with 4-digit year >= 1000).
+      // If incomplete or empty, do not prematurely show errors while typing.
+      if (!value) {
+        setFieldErrors(prev => ({ ...prev, expiryDate: '' }));
+      } else {
+        const parts = value.split('-');
+        const year = parseInt(parts[0], 10);
+        if (parts[0].length === 4 && year >= 1000) {
+          const minExpiry = getMinExpiryDate();
+          const maxExpiry = getMaxDate();
+          if (value < minExpiry) {
+            setFieldErrors(prev => ({
+              ...prev,
+              expiryDate: 'Expiry date must be at least 1 month in the future'
+            }));
+          } else if (value > maxExpiry) {
+            setFieldErrors(prev => ({
+              ...prev,
+              expiryDate: 'Expiry date cannot be more than 10 years from today'
+            }));
+          } else {
+            setFieldErrors(prev => ({ ...prev, expiryDate: '' }));
+          }
+        } else {
+          // Partial year being typed (e.g. "0002" or "0020")
+          setFieldErrors(prev => ({ ...prev, expiryDate: '' }));
+        }
+      }
     } else {
       setLicenseData(prev => ({
         ...prev,
@@ -110,6 +164,49 @@ const LicenseInformation = () => {
       }));
       // Validate on change
       validateField(name, value);
+    }
+  };
+
+  const handleExpiryDateBlur = () => {
+    setIsDateFocused(false);
+    validateField('expiryDate', licenseData.expiryDate);
+  };
+
+  const handleDatePaste = (e) => {
+    const pasted = e.clipboardData.getData('text').trim();
+    // MM/DD/YYYY or MM-DD-YYYY
+    const mdy = pasted.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (mdy) {
+      e.preventDefault();
+      const month = mdy[1].padStart(2, '0');
+      const day = mdy[2].padStart(2, '0');
+      const year = mdy[3];
+      const formatted = `${year}-${month}-${day}`;
+      setLicenseData(prev => ({ ...prev, expiryDate: formatted }));
+      validateField('expiryDate', formatted);
+      return;
+    }
+    // YYYY-MM-DD
+    const ymd = pasted.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+    if (ymd) {
+      e.preventDefault();
+      const year = ymd[1];
+      const month = ymd[2].padStart(2, '0');
+      const day = ymd[3].padStart(2, '0');
+      const formatted = `${year}-${month}-${day}`;
+      setLicenseData(prev => ({ ...prev, expiryDate: formatted }));
+      validateField('expiryDate', formatted);
+      return;
+    }
+  };
+
+  const handleCalendarClick = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.focus();
+      }
     }
   };
 
@@ -811,14 +908,19 @@ const LicenseInformation = () => {
               </label>
               <div className="relative w-full flex items-center">
                 <input
+                  ref={dateInputRef}
                   type="date"
                   name="expiryDate"
                   value={licenseData.expiryDate}
                   onChange={handleLicenseInputChange}
+                  onFocus={() => setIsDateFocused(true)}
+                  onBlur={handleExpiryDateBlur}
+                  onPaste={handleDatePaste}
                   min={getMinExpiryDate()}
+                  max={getMaxDate()}
                   placeholder="MM/DD/YYYY"
                   className={`w-full px-3 pr-10 py-2.5 rounded-lg outline-none font-poppins text-[13px] ${
-                    !licenseData.expiryDate ? 'empty-date-input' : ''
+                    !licenseData.expiryDate && !isDateFocused ? 'empty-date-input' : ''
                   }`}
                   style={{
                     background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%)',
@@ -833,12 +935,15 @@ const LicenseInformation = () => {
                     transition: 'border-color 0.2s'
                   }}
                 />
-                {!licenseData.expiryDate && (
+                {!licenseData.expiryDate && !isDateFocused && (
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#808080] font-poppins text-[13px] select-none">
                     MM/DD/YYYY
                   </span>
                 )}
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/80 flex items-center justify-center">
+                <div
+                  onClick={handleCalendarClick}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/80 flex items-center justify-center cursor-pointer z-[3]"
+                >
                   <Calendar size={18} />
                 </div>
               </div>

@@ -9,17 +9,28 @@ input[type="date"] {
   position: relative;
 }
 
-input[type="date"].empty-date-input {
+input[type="date"].empty-date-input:not(:focus) {
   color: transparent !important;
 }
 
-input[type="date"].empty-date-input::-webkit-datetime-edit,
-input[type="date"].empty-date-input::-webkit-datetime-edit-fields-wrapper,
-input[type="date"].empty-date-input::-webkit-datetime-edit-text,
-input[type="date"].empty-date-input::-webkit-datetime-edit-month-field,
-input[type="date"].empty-date-input::-webkit-datetime-edit-day-field,
-input[type="date"].empty-date-input::-webkit-datetime-edit-year-field {
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit,
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit-fields-wrapper,
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit-text,
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit-month-field,
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit-day-field,
+input[type="date"].empty-date-input:not(:focus)::-webkit-datetime-edit-year-field {
   color: transparent !important;
+}
+
+input[type="date"].empty-date-input:focus,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit-fields-wrapper,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit-text,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit-month-field,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit-day-field,
+input[type="date"].empty-date-input:focus::-webkit-datetime-edit-year-field {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 input[type="date"]::-webkit-inner-spin-button,
