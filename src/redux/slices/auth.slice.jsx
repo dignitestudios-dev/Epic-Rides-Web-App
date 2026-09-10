@@ -118,6 +118,11 @@ export const verifyOtp = createAsyncThunk(
 export const getAccountStatus = createAsyncThunk(
   "auth/getAccountStatus",
   async (_, thunkAPI) => {
+    const token = Cookies.get("token");
+    if (!token) {
+      return thunkAPI.rejectWithValue("No authentication token found");
+    }
+
     try {
       const res = await axios.get("/api/auth/account-status", {
         skipAuthRedirect: true,
@@ -160,9 +165,10 @@ export const getAccountStatus = createAsyncThunk(
       const status = e.response?.status;
       const errorMessage = e.response?.data?.message || e.message || "Failed to fetch account status";
 
-      // When account status returns 401, auto logout user
-      if (status === 401) {
-        if (window.location.pathname !== "/verification") {
+      // When account status returns 401, auto logout user ONLY if a real token was sent
+      if (status === 401 && Cookies.get("token")) {
+        const unauthPaths = ["/verification", "/signup", "/"];
+        if (!unauthPaths.includes(window.location.pathname)) {
           Cookies.remove("token");
           Cookies.remove("user");
           localStorage.removeItem("verifiedPhone");
@@ -242,18 +248,32 @@ export const onboard = createAsyncThunk(
       }
 
       // Store token and user data if provided
-      if (data?.token) {
-        Cookies.set("token", data.token, { expires: 7 });
+      const tokenToStore =
+        data?.token ||
+        res.data?.token ||
+        data?.accessToken ||
+        res.data?.accessToken ||
+        data?.user?.token ||
+        null;
+
+      const userToStore =
+        data?.user ||
+        (data?._id ? data : null) ||
+        res.data?.user ||
+        null;
+
+      if (tokenToStore) {
+        Cookies.set("token", tokenToStore, { expires: 7 });
       }
-      if (data?.user) {
-        Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
+      if (userToStore) {
+        Cookies.set("user", JSON.stringify(userToStore), { expires: 7 });
       }
 
       SuccessToast(message || "Profile created successfully");
       return {
         message: message || "Profile created successfully",
-        token: data?.token || null,
-        user: data?.user || null,
+        token: tokenToStore,
+        user: userToStore,
       };
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || "Onboarding failed";
@@ -658,7 +678,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.success = action.payload.message;
         state.token = action.payload.token || Cookies.get("token") || null;
-        state.isAuthenticated = Boolean(state.token);
+        state.isAuthenticated = Boolean(state.token || localStorage.getItem("verifiedPhone"));
         if (action.payload.user) {
           state.user = action.payload.user;
         }
@@ -671,6 +691,7 @@ const authSlice = createSlice({
         state.pendingDocuments = action.payload.pendingDocuments || [];
         state.rejectedDocuments = action.payload.rejectedDocuments || [];
         state.missingDocuments = action.payload.missingDocuments || [];
+        state.isAccountStatusInitialized = true;
         state.error = null;
         syncCompletedStepsFromUser(state.user, state.isOnboarded);
       })
@@ -721,7 +742,8 @@ const authSlice = createSlice({
         state.token = action.payload.token || Cookies.get("token") || null;
         state.user = action.payload.user || JSON.parse(Cookies.get("user") || "null");
         state.isOnboarded = true;
-        state.isAuthenticated = Boolean(state.token);
+        state.isAccountStatusInitialized = true;
+        state.isAuthenticated = Boolean(state.token || localStorage.getItem("verifiedPhone"));
         state.error = null;
       })
       .addCase(onboard.rejected, (state, action) => {

@@ -59,8 +59,8 @@ function App() {
     return () => clearInterval(intervalId);
   }, [dispatch, location.pathname]);
 
-  // Show branded loading screen on initial load when token exists until status resolves
-  if (token && !isAccountStatusInitialized) {
+  // Show branded loading screen on initial load when token exists on root/login until status resolves
+  if (token && !isAccountStatusInitialized && location.pathname === "/") {
     return (
       <div className="relative w-full min-h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-poppins px-4">
         {/* Background Image with Car Watermark and Lights */}

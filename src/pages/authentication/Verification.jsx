@@ -165,23 +165,25 @@ export default function Verification() {
 
         let routingData = verifyResult;
 
-        // 2. Fetch authoritative account status from /api/auth/account-status if available
-        try {
-          const statusResult = await dispatch(getAccountStatus()).unwrap();
-          console.log('=== Account Status After Verification ===', statusResult);
-          if (
-            statusResult &&
-            (statusResult.user ||
-              statusResult.accountStatus !== undefined ||
-              statusResult.isOnboarded !== undefined)
-          ) {
-            routingData = statusResult;
+        // 2. Fetch authoritative account status from /api/auth/account-status if token exists
+        if (verifyResult?.token || Cookies.get('token')) {
+          try {
+            const statusResult = await dispatch(getAccountStatus()).unwrap();
+            console.log('=== Account Status After Verification ===', statusResult);
+            if (
+              statusResult &&
+              (statusResult.user ||
+                statusResult.accountStatus !== undefined ||
+                statusResult.isOnboarded !== undefined)
+            ) {
+              routingData = statusResult;
+            }
+          } catch (statusError) {
+            console.warn(
+              'Account status API failed or returned 401, falling back to verify OTP data:',
+              statusError
+            );
           }
-        } catch (statusError) {
-          console.warn(
-            'Account status API failed or returned 401, falling back to verify OTP data:',
-            statusError
-          );
         }
 
         // 3. Resolve destination route based on available authoritative data (account-status if succeeded, else verify OTP data)

@@ -4,9 +4,13 @@ import Cookies from 'js-cookie';
 
 const ProtectedRoute = ({ children }) => {
   const token = Cookies.get('token');
+  const verifiedPhone = localStorage.getItem('verifiedPhone');
+  const user = Cookies.get('user');
   const location = useLocation();
 
-  if (!token) {
+  const isAuthorized = Boolean(token || verifiedPhone || user);
+
+  if (!isAuthorized) {
     return <Navigate to="/" replace state={{ from: location }} />;
   }
 

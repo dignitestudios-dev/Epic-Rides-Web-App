@@ -95,8 +95,10 @@ instance.interceptors.response.use(
 
     if (error.response && error.response.status === 401) {
       const skipRedirect = error.config?.skipAuthRedirect === true;
+      const hadToken = Boolean(Cookies.get("token"));
+      const unauthPaths = ["/verification", "/signup", "/"];
 
-      if (!skipRedirect && window.location.pathname !== "/verification") {
+      if (!skipRedirect && hadToken && !unauthPaths.includes(window.location.pathname)) {
         Cookies.remove("token");
         Cookies.remove("user");
         localStorage.removeItem("verifiedPhone");
