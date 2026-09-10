@@ -349,28 +349,40 @@ export default function Verification() {
           </div>
 
           {/* OTP Input Container */}
-          <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 w-full max-w-[360px]">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => (otpInputRefs.current[index] = el)}
-                type="text"
-                inputMode="numeric"
-                autoComplete={index === 0 ? "one-time-code" : "off"}
-                maxLength={6}
-                value={digit}
-                onFocus={(e) => e.target.select()}
-                onPaste={(e) => handlePaste(index, e)}
-                onChange={(e) => handleOtpChange(index, e.target.value)}
-                onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl font-poppins font-semibold text-lg sm:text-2xl text-center text-white outline-none backdrop-blur-[42px] transition-colors focus:border-[#61CB08]"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',
-                  border: '1px solid rgba(97, 203, 8, 0.32)',
-                  WebkitBackdropFilter: 'blur(42px)'
-                }}
-              />
-            ))}
+          <div className="flex flex-row items-center justify-center gap-2 min-[380px]:gap-2.5 sm:gap-3 w-full max-w-[360px] mx-auto">
+            {otp.map((digit, index) => {
+              const isFilled = Boolean(digit);
+              return (
+                <input
+                  key={index}
+                  ref={(el) => (otpInputRefs.current[index] = el)}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete={index === 0 ? "one-time-code" : "off"}
+                  maxLength={6}
+                  value={digit}
+                  onFocus={(e) => e.target.select()}
+                  onPaste={(e) => handlePaste(index, e)}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                  className={`w-11 h-11 min-[380px]:w-12 min-[380px]:h-12 sm:w-[50px] sm:h-[50px] aspect-square rounded-xl font-poppins font-semibold text-lg sm:text-2xl text-center text-white outline-none backdrop-blur-[42px] transition-all duration-200 p-0 flex items-center justify-center leading-none caret-[#61CB08] ${
+                    isFilled
+                      ? 'border-[#61CB08] shadow-[0_0_12px_rgba(97,203,8,0.25)]'
+                      : 'border-[rgba(97,203,8,0.32)] focus:border-[#61CB08] focus:shadow-[0_0_12px_rgba(97,203,8,0.3)]'
+                  }`}
+                  style={{
+                    background: isFilled
+                      ? 'linear-gradient(180deg, rgba(97, 203, 8, 0.18) 0%, rgba(97, 203, 8, 0.08) 50%, rgba(97, 203, 8, 0.12) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)'
+                      : 'linear-gradient(180deg, rgba(97, 203, 8, 0.12) 0%, rgba(97, 203, 8, 0.04) 50%, rgba(97, 203, 8, 0.07) 100%), linear-gradient(180deg, rgba(37, 37, 37, 1) 0%, rgba(15, 15, 15, 1) 100%)',
+                    border: isFilled
+                      ? '1.5px solid #61CB08'
+                      : '1px solid rgba(97, 203, 8, 0.32)',
+                    WebkitBackdropFilter: 'blur(42px)'
+                  }}
+                />
+              );
+            })}
           </div>
 
           {/* Verify Button */}
