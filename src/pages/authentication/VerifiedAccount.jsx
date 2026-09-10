@@ -136,13 +136,6 @@ const VerifiedAccount = () => {
       navigate(nextRoute, { replace: true });
       return;
     }
-
-    // Must have active subscription before accessing verified-account
-    if (user && !hasActiveSubscription(user)) {
-      clearSubscriptionCheckoutSession();
-      navigate('/subscription', { replace: true });
-      return;
-    }
   }, [user, hasRejectedDocs, navigate]);
 
   const handleLogout = () => {

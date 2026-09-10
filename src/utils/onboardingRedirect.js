@@ -27,7 +27,10 @@ export const areAllDocumentsApproved = (user) => {
 
 /** Subscription purchased and active (missing `subscription` on user = not bought). */
 export const hasActiveSubscription = (user) =>
-  user?.subscription?.status === 'active';
+  user?.subscription?.status === 'active' ||
+  user?.subscription === 'active' ||
+  user?.isSubscribed === true ||
+  user?.subscriptionStatus === 'active';
 
 export const needsSubscriptionPurchase = (user) => !hasActiveSubscription(user);
 
